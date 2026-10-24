@@ -285,5 +285,869 @@
    "--cite book \"1\" step 1",
    "def z := 1"
   ]
+ },
+ {
+  "name": "review: raw string backslash",
+  "lines": [
+   "def p := r\"C:\\\"",
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: raw string hash quote",
+  "lines": [
+   "def p := r#\"say \"hi\" now\"#",
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: char escaped quote",
+  "lines": [
+   "def q : Char := '\\\"'",
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: char escaped quote then docstring wipe",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "theorem a : True := by",
+   "  trivial",
+   "def q : Char := '\\\"'",
+   "/-- The quote character `\"` -/",
+   "theorem b : True := trivial"
+  ]
+ },
+ {
+  "name": "review: guillemet block opener",
+  "lines": [
+   "theorem «foo/-bar» : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: guillemet line comment",
+  "lines": [
+   "theorem «a--b» : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: guillemet quote",
+  "lines": [
+   "theorem «a\"b» : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: docstring dash slash",
+  "lines": [
+   "/--/",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: nbsp entry",
+  "lines": [
+   "-- cite book \" \" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: form feed entry",
+  "lines": [
+   "-- cite book \"\f\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: em space entry",
+  "lines": [
+   "-- cite book \" \" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: vertical tab entry",
+  "lines": [
+   "-- cite book \"\u000b\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: ideographic space entry",
+  "lines": [
+   "-- cite book \"　　\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: stray closer after code",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial",
+   "theorem b : True := trivial -/",
+   "theorem c : True := trivial"
+  ]
+ },
+ {
+  "name": "review: string gap",
+  "lines": [
+   "def s := \"abc\\",
+   "  def\"",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: string with marker text",
+  "lines": [
+   "def s := \"-- cite book \\\"1\\\" step 1\"",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: multiline string with marker line",
+  "lines": [
+   "def s := \"abc",
+   "-- cite book \"1\" step 1",
+   "xyz\"",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: nested depth three",
+  "lines": [
+   "/- a /- b /- c -/ b -/",
+   "-- cite book \"1\" step 1",
+   "a -/",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: quote inside comment",
+  "lines": [
+   "/- it has a \" quote -/",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: closer in quotes in comment",
+  "lines": [
+   "/- \"-/\" -/",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: docstring then code same line",
+  "lines": [
+   "/-- doc -/ theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: module doc then marker same line",
+  "lines": [
+   "/-! x -/ -- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: line comment with opener",
+  "lines": [
+   "-- see /- here",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: line comment with closer",
+  "lines": [
+   "-- see -/ here",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: char slash dash",
+  "lines": [
+   "def c := ('/', '-')",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: char apostrophe",
+  "lines": [
+   "def c := '\\''",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: primes and quote",
+  "lines": [
+   "theorem h' : True := by",
+   "  -- cite book \"1\" step 1",
+   "  exact h'' \"'\""
+  ]
+ },
+ {
+  "name": "review: escaped backslash string",
+  "lines": [
+   "def s := \"\\\\\"",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: escaped backslash quote",
+  "lines": [
+   "def s := \"a\\\\\\\"b\"",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "review: unterminated string eof",
+  "lines": [
+   "def s := \"abc",
+   "-- cite book \"1\" step 1"
+  ]
+ },
+ {
+  "name": "review: tab indent marker",
+  "lines": [
+   "theorem a : True := by",
+   "\t-- cite book \"1\" step 1",
+   "  skip",
+   " trivial"
+  ]
+ },
+ {
+  "name": "review: tab cite end",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  skip",
+   "  --\tcite end",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: no space cite end",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  skip",
+   "  --cite end",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: four dashes",
+  "lines": [
+   "---- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: three dashes",
+  "lines": [
+   "--- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: many steps rel",
+  "lines": [
+   "-- cite book \"1\" step 1 2 3 exactMatch",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: leading zero",
+  "lines": [
+   "-- cite book \"1\" step 01 007",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: huge step",
+  "lines": [
+   "-- cite book \"1\" step 99999999999999999999999",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: quote in middle",
+  "lines": [
+   "-- cite book \"a\"b\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: source glued to entry",
+  "lines": [
+   "-- cite book\"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: entry glued to step",
+  "lines": [
+   "-- cite book \"1\"step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: unicode source",
+  "lines": [
+   "-- cite bóok \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: odd sources",
+  "lines": [
+   "-- cite _ \"1\" step 1",
+   "theorem a : True := trivial",
+   "-- cite a._b \"1\" step 1",
+   "theorem b : True := trivial",
+   "-- cite a..b \"1\" step 1",
+   "theorem c : True := trivial",
+   "-- cite .a \"1\" step 1",
+   "theorem d : True := trivial",
+   "-- cite a. \"1\" step 1",
+   "theorem e : True := trivial"
+  ]
+ },
+ {
+  "name": "review: tab in entry",
+  "lines": [
+   "-- cite book \"a\tb\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: trailing spaces",
+  "lines": [
+   "-- cite book \"1\" step 1   ",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: empty file",
+  "lines": [
+   ""
+  ]
+ },
+ {
+  "name": "review: single newline",
+  "lines": [
+   "",
+   ""
+  ]
+ },
+ {
+  "name": "review: marker eof no newline",
+  "lines": [
+   "theorem a : True := by",
+   "  trivial",
+   "-- cite book \"1\" step 1"
+  ]
+ },
+ {
+  "name": "review: crlf file",
+  "lines": [
+   "theorem a : True := by\r",
+   "  -- cite book \"1\" step 1\r",
+   "  trivial\r",
+   ""
+  ]
+ },
+ {
+  "name": "review: lone cr in code",
+  "lines": [
+   "theorem a : True := by\r  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: lone cr at end of marker",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1\r",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: nbsp before dashes",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: astral chars",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"𝔽😀\" step 1",
+   "  exact (𝔽 : True)"
+  ]
+ },
+ {
+  "name": "review: combining entry",
+  "lines": [
+   "-- cite book \"é\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: cite end extra",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  skip",
+   "  -- cite end now",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: cite end alone first",
+  "lines": [
+   "-- cite end",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: prose with step word",
+  "lines": [
+   "-- cite the step here",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: prose with quote",
+  "lines": [
+   "-- cite Axler \"Linear Algebra\" for this",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: only cite",
+  "lines": [
+   "-- cite",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: cite source only",
+  "lines": [
+   "-- cite book",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: block comment then line comment",
+  "lines": [
+   "/- x -/ -- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: code then block comment open",
+  "lines": [
+   "theorem a : True := by /- start",
+   "  -- cite book \"1\" step 1",
+   "  -/",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: close then code",
+  "lines": [
+   "/- start",
+   "-- cite book \"1\" step 1",
+   "-/ theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: char literal quote then string",
+  "lines": [
+   "def c := '\"' ++ \"-- cite\"",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: interpolated nested string",
+  "lines": [
+   "def s := s!\"{\"a\"} -- x\"",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: col0 marker before indented namespace",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "  theorem a : True := by",
+   "    trivial",
+   "  theorem b : True := trivial",
+   "end X"
+  ]
+ },
+ {
+  "name": "review: marker col4 then skip col2",
+  "lines": [
+   "theorem a : True := by",
+   "    -- cite book \"1\" step 1",
+   "  skip",
+   "    trivial",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: docstring line followed by code",
+  "lines": [
+   "/-- doc",
+   "  more -/ theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: stray closer first line",
+  "lines": [
+   "-/",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: two stray closers",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial",
+   "-/",
+   "-- cite book \"1\" step 1",
+   "theorem b : True := trivial",
+   "-/",
+   "-- cite book \"1\" step 1",
+   "theorem c : True := trivial"
+  ]
+ },
+ {
+  "name": "review: cr cr lf",
+  "lines": [
+   "theorem a : True := by\r\r",
+   "  -- cite book \"1\" step 1\r",
+   "  trivial\r"
+  ]
+ },
+ {
+  "name": "review: trailing lone cr eof",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial\r"
+  ]
+ },
+ {
+  "name": "review: only crs",
+  "lines": [
+   "\r\r\r"
+  ]
+ },
+ {
+  "name": "review: nul in code",
+  "lines": [
+   "theorem a\u0000 : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: nul in entry",
+  "lines": [
+   "-- cite book \"a\u0000b\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: line separator char",
+  "lines": [
+   "theorem a : True := by ",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: interp char quote",
+  "lines": [
+   "def s := s!\"{'\"'}\"",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: unicode digits in source",
+  "lines": [
+   "-- cite book١ \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: fullwidth digits step",
+  "lines": [
+   "-- cite book \"1\" step １",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: kelvin sign source",
+  "lines": [
+   "-- cite Kelvin \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: dotless i source",
+  "lines": [
+   "-- cite ıbook \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: cite end then code col0",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "theorem a : True := by",
+   "  skip",
+   "-- cite end",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: marker col0 inside proof",
+  "lines": [
+   "theorem a : True := by",
+   "-- cite book \"1\" step 1",
+   "  skip",
+   "  trivial",
+   "theorem b : True := trivial"
+  ]
+ },
+ {
+  "name": "review: marker group mixed malformed",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  -- cite book \"2\" step x",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: deep indent marker shallow code",
+  "lines": [
+   "theorem a : True := by",
+   "      -- cite book \"1\" step 1",
+   "  trivial",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "review: nested block opener in line comment in block",
+  "lines": [
+   "/-",
+   "-- /- nested?",
+   "-/",
+   "-- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: block closer then opener same line",
+  "lines": [
+   "/- a -/ /- b",
+   "-- cite book \"1\" step 1",
+   "-/",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: string then comment opener",
+  "lines": [
+   "def s := \"x\" /- c",
+   "-- cite book \"1\" step 1",
+   "-/",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: char then line comment",
+  "lines": [
+   "def c := 'x' -- cite book \"1\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: empty step list rel",
+  "lines": [
+   "-- cite book \"1\" step exactMatch",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: step twice",
+  "lines": [
+   "-- cite book \"1\" step 1 step 2",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: very long line",
+  "lines": [
+   "-- cite book \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\" step 1",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "review: many markers group",
+  "lines": [
+   "-- cite book \"0\" step 1",
+   "-- cite book \"1\" step 2",
+   "-- cite book \"2\" step 3",
+   "-- cite book \"3\" step 4",
+   "-- cite book \"4\" step 5",
+   "-- cite book \"5\" step 6",
+   "-- cite book \"6\" step 7",
+   "-- cite book \"7\" step 8",
+   "-- cite book \"8\" step 9",
+   "-- cite book \"9\" step 10",
+   "-- cite book \"10\" step 11",
+   "-- cite book \"11\" step 12",
+   "-- cite book \"12\" step 13",
+   "-- cite book \"13\" step 14",
+   "-- cite book \"14\" step 15",
+   "-- cite book \"15\" step 16",
+   "-- cite book \"16\" step 17",
+   "-- cite book \"17\" step 18",
+   "-- cite book \"18\" step 19",
+   "-- cite book \"19\" step 20",
+   "-- cite book \"20\" step 21",
+   "-- cite book \"21\" step 22",
+   "-- cite book \"22\" step 23",
+   "-- cite book \"23\" step 24",
+   "-- cite book \"24\" step 25",
+   "-- cite book \"25\" step 26",
+   "-- cite book \"26\" step 27",
+   "-- cite book \"27\" step 28",
+   "-- cite book \"28\" step 29",
+   "-- cite book \"29\" step 30",
+   "theorem a : True := trivial"
+  ]
+ },
+ {
+  "name": "raw string with comment opener",
+  "lines": [
+   "def p := r#\"a /- b\"#",
+   "-- cite book \"1\" step 1",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "raw string over lines",
+  "lines": [
+   "def p := r\"first",
+   "-- cite book \"1\" step 1",
+   "last\"",
+   "-- cite book \"1\" step 2",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "interpolation with nested string",
+  "lines": [
+   "def m := s!\"x {\"-/\"} y\"",
+   "-- cite book \"1\" step 1",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "interpolation with braces",
+  "lines": [
+   "def m := s!\"x {({a := 1} : S).a} y\"",
+   "-- cite book \"1\" step 1",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "char escaped backslash",
+  "lines": [
+   "def c := '\\\\'",
+   "-- cite book \"1\" step 1",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "char escaped apostrophe",
+  "lines": [
+   "def c := '\\''",
+   "-- cite book \"1\" step 1",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "primes in names",
+  "lines": [
+   "theorem h' (x' : Nat) : x' = x' := rfl",
+   "-- cite book \"1\" step 1",
+   "def q' := 1"
+  ]
+ },
+ {
+  "name": "guillemets",
+  "lines": [
+   "def «a -/ b» := 1",
+   "-- cite book \"1\" step 1",
+   "def «c\"d» := 2"
+  ]
+ },
+ {
+  "name": "stray closer in whole file",
+  "lines": [
+   "theorem a : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial",
+   "oops -/",
+   "-- cite book \"1\" step 2",
+   "def q := 1"
+  ]
+ },
+ {
+  "name": "unicode space entry",
+  "lines": [
+   "-- cite book \" \" step 1",
+   "def q := 1"
+  ]
  }
 ]

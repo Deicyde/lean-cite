@@ -66,7 +66,13 @@ def elabCiteSource : CommandElab
       if fs.any (·.1 == key) then throwErrorAt k "the field `{key}` is given twice"
       fs := fs.push (key, v.getString)
     if let some d := doc then
-      fs := fs.push ("doc", d.getDocString.trimAscii.toString)
+      if fs.any (·.1 == "doc") then throwErrorAt d "the field `doc` is given twice: a docstring is `doc`"
+      -- the comment's own text, which a Verso docstring does not keep as a string
+      let fm ← getFileMap
+      if let (some a, some b) := (d.raw.getPos?, d.raw.getTailPos?) then
+        let text := String.Pos.Raw.extract fm.source a b
+        let text := ((text.drop 3).dropEnd 2).trimAscii.toString
+        unless text.isEmpty do fs := fs.push ("doc", text)
     modifyEnv (sourceExt.addEntry · { name := n, title := title.getString, fields := fs,
                                       module := (← getEnv).mainModule })
   | _ => throwUnsupportedSyntax
@@ -135,7 +141,10 @@ those of `@[cite]`, and several `cite … in` may wrap the same command.
 
 A command cannot start with a non-reserved word. This form therefore makes `cite` a keyword in
 every file that imports it, as Mathlib's attributes do `stacks` and `kerodon`; write `«cite»` for
-an identifier. -/
+an identifier.
+
+A proof is elaborated asynchronously, so its errors come after this command has recorded the
+citation; a citation is recorded even when its command fails, as with `@[cite]`. -/
 syntax (name := citeIn) "cite " ident ppSpace str (ppSpace citeOpt)* (ppSpace str)?
   " in" ppLine command : command
 
@@ -181,7 +190,7 @@ def elabCiteIn : CommandElab
 /-- A line describing a citation, for `#cite_tags`. -/
 def Citation.describe (c : Citation) : MessageData :=
   let target := match c.target with
-    | .decl n => m!"{.ofConstName n}"
+    | .decl n => m!"{(privateToUserName? n).getD n}"
     | .lines mod line _ kw => m!"the {kw} at {mod}:{line}"
   let opts := [("rel", c.rel), ("role", c.role), ("part", c.part)].filter (!·.2.isEmpty)
     |>.map fun (k, v) => s!" ({k} := {v})"

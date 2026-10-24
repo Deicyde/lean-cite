@@ -38,7 +38,8 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
 
 - `cite_source` declares a source. Any project declares its own, beside those of the projects it
   imports. Two modules that do not import each other can declare the same name. Citing that name
-  is then an error that names both modules.
+  is then an error that names both modules, and so is `#cite_export` when some citation or marker
+  uses it.
 - A source's fields are free-form, for exporters. A `uri` containing `{id}` is a template for each
   entry's address, as for a web database. `type` is the Literature Links type of its ends.
   `registry` is its key in Literature Links `identifiers`.
@@ -53,6 +54,8 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
     modifiers, `open … in` and `set_option … in`.
   - A command cannot start with a non-reserved word, so `cite` becomes a keyword wherever the
     package is imported, as `stacks` and `kerodon` are wherever Mathlib is.
+  - A proof is elaborated asynchronously, so its errors come after the citation is recorded. A
+    citation is therefore recorded even when its command fails, as with `@[cite]`.
 - `-- cite src "id" step k₁ k₂ … [relation]` marks the lines that carry out steps of a proof.
   - A marker is a line comment alone on its line, outside block comments, docstrings and strings.
   - The range starts at the next line of code. It ends before the next marker or `-- cite end`,
@@ -68,23 +71,19 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
   Run it with `lake env lean` from a file that imports what it should see and does not start
   with `module`.
 
-Step markers are comments for two reasons:
-
-- A tactic cannot mark a statement or a term-mode `calc`. In chapter 1 of *Linear Algebra Done
-  Right*, 28 of the 45 Lean ranges of proof steps start at a declaration's statement or in term
-  mode.
-- A linter cannot record what it reads, since Lean 4.30 runs linters under `withoutModifyingEnv`
-  or in a separate task.
-
-`#cite_export` therefore reads the markers from the source, and the linter `linter.cite.steps`
-only checks them while a file compiles. It reports:
+A tactic cannot mark a declaration's statement or a term-mode `calc`. In chapter 1 of *Linear
+Algebra Done Right*, 28 of the 45 Lean ranges of proof steps start at a statement or in term mode.
+Lean 4.30 runs linters under `withoutModifyingEnv` or in a separate task, so a linter cannot record
+what it reads either. Step markers are therefore comments, which `#cite_export` reads from the
+source, and the linter `linter.cite.steps` only checks them while a file compiles. It reports:
 
 - markers that do not parse, and markers that mark no code;
 - sources that are not declared;
 - ranges that run outside their command.
 
-The linter reads only each command's lines. On a file of 1,500 documented theorems and 6,004
-lines, each with a marker, compiling takes 0.75–0.9 s with the linter and 0.6 s without.
+The linter reads each command's lines and those up to the next command. A file of 1,500
+documented theorems with a marker each (6,004 lines) elaborates in 0.67 s with the linter and
+0.57 s without. Indented in a namespace, it takes 0.76–0.79 s and 0.57–0.58 s.
 
 Lean writes a declaration's own docstring after compiling it, and that write replaces what an
 attribute appended before elaboration. Mathlib's cross-reference attributes append their links
@@ -113,7 +112,10 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   [--layout layout.json] --out annotations/
 ```
 
-The output is one `<source>.jsonl` per source and `mathlib.jsonl`, each annotation whole.
+The output is one `<source>.jsonl` per cited source and, when some cross-reference's repository
+is known, `mathlib.jsonl`. Each annotation is whole, and identical ones are written once. Line
+numbers are Lean's: lines end at line feeds. Literature Links also ends a line at a lone carriage
+return, so in a file that has one, later lines are numbered one less here than there.
 
 - A declaration's end names the repository of its module. Modules under the export's roots are the
   project's; Mathlib's are Mathlib's with `--mathlib-commit`; others need `--lean-repo` or are

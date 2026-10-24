@@ -6,7 +6,7 @@ public meta import Lean.Linter.Basic
 /-!
 # Proof-step markers
 
-A line comment marks the lines that carry out a step of a proof in the source. Here line 3 is
+A line comment marks the lines that carry out a step of a proof in the source. Here lines 3–5 are
 step 2 of the proof of item 1.26:
 
 ```
@@ -17,31 +17,40 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
     _ = 0 := h 0
 ```
 
-A marker is a line comment alone on its line, outside block comments, docstrings and strings:
-`--`, then the words `cite`, a source, an entry in double quotes, `step`, one or more step
-numbers, and optionally a relation. Words are separated by spaces or tabs. The source is ASCII
-letters, digits and `_`, in parts separated by `.`, not starting with a digit. The entry cannot
-hold a double quote. Step numbers are ASCII digits, from 1. The line `-- cite end` ends a range.
-A line comment that starts with `cite` and has a quoted entry or the word `step` must parse, or
-it is reported as malformed; other comments are prose.
+A marker is a line comment alone on its line, outside block comments, docstrings and strings. After
+its `--`, its words are `cite`, a source, an entry, `step`, one or more step numbers, and optionally
+a relation.
 
-A marker opens a range at the next line of code. Lines of code here are lines with something
-outside comments; blank lines and comment lines are not. The range ends before the first of:
+* Words are separated by spaces or tabs. An entry is a word from a `"` to the next `"`, and the
+  next word may follow it directly.
+* A source is ASCII letters, digits and `_`, in parts separated by `.`, none starting with a digit.
+* An entry holds no `"`, and not only spaces, tabs and line breaks.
+* Step numbers are ASCII digits, from 1.
+* The comment `-- cite end` ends a range; `-- cite end` followed by anything is malformed.
+* A line comment whose first word is `cite` and that has at least three words, the third quoted or
+  one of them `step`, must parse as a marker, or is reported as malformed. Other comments are prose.
+
+A line of code is a line with something outside comments; blank lines and comment lines are not
+code. A marker opens a range at the next line of code, which the range always holds. The range ends
+before the first of:
 
 * the next marker, malformed marker or `-- cite end`;
-* the next line of code indented less than the marker's column, or, for a marker in the first
-  column, the next line of code that starts in the first column (usually the next command).
+* the next line of code indented less than the marker's column or, for a marker in the first
+  column, the next line of code in the first column, usually where the next command starts.
 
 Blank and comment lines at the end of the range are left out. Markers on consecutive lines start
-their ranges at the same line, and each ends its range by its own column.
+their ranges at the same line, and each ends its range by its own column. Indentation counts spaces
+and tabs. Lines end at line feeds, as in Lean's positions; a lone carriage return does not end one.
 
-Lines end at line feeds, as in Lean's own positions; a lone carriage return does not end a line.
+The lexer follows nested block comments and docstrings, line comments, strings with the code in an
+interpolated string's braces, raw strings, character literals and `«…»` names. A block-comment
+closer that closes nothing shows that it has lost its place, and the scan reports it.
 
-Markers are comments, so they fit where a tactic cannot: before a declaration's statement, in a
-term-mode `calc`. `#cite_export` reads them from the source; a linter cannot record them, since
-Lean runs linters under `withoutModifyingEnv` or in a separate task. The linter
-`linter.cite.steps` checks the markers of each command while it compiles: that they parse, cite a
-declared source, and mark lines inside the command.
+A tactic cannot mark a declaration's statement or a term-mode `calc`, and Lean runs linters under
+`withoutModifyingEnv` or in a separate task, so a linter cannot record what it reads. Markers are
+therefore comments, which `#cite_export` reads from the source. The linter `linter.cite.steps`
+checks each command's markers while it compiles: that they parse, mark code, cite a declared
+source, and mark lines inside the command.
 -/
 
 public meta section
@@ -131,58 +140,106 @@ def classifyComment (line column : Nat) (text : String) : LineKind := Id.run do
   return .marker { line, column, source := ws[1]!.toName, id,
                    steps := nums.toArray.map (·.toNat!), rel }
 
+/-- Where the lexer is, outside block comments. -/
+inductive Mode where
+  /-- In a string; `interp` for an interpolated one such as `s!"…"`. -/
+  | str (interp : Bool)
+  /-- In a raw string, which this many `#` after a `"` close. -/
+  | raw (hashes : Nat)
+  /-- In code inside `{…}` of an interpolated string, with this many more braces open. -/
+  | interp (braces : Nat)
+  deriving Inhabited, BEq
+
+/-- Can `c` continue an identifier, so that a `'` or an `r` after it is part of the identifier? -/
+def isIdentChar (c : Char) : Bool :=
+  c.isAlphanum || c == '_' || c == '\'' || c == '!' || c == '?' || c.val > 127
+
 /-- Classify each of `lines`, the first being line `first` of its file, with a lexer that follows
-nested block comments (docstrings included), strings and line comments. When the lines start
-inside a block comment, which shows as a block-comment closer with nothing open, the lines up to
-it are comment. -/
-def classifyLines (lines : Array String) (first : Nat := 1) : Array LineKind := Id.run do
+nested block comments (docstrings included), line comments, strings (interpolated ones too, with
+the code in their braces), raw strings, character literals and `«…»` names. Also returns the lines
+on which a block-comment closer closes nothing. When `slice` holds, the lines may start inside a
+block comment, which such a closer shows: the lines up to it are then comment. -/
+def classifyLines (lines : Array String) (first : Nat := 1) (slice := false) :
+    Array LineKind × Array Nat := Id.run do
   let mut out : Array LineKind := #[]
+  let mut strays : Array Nat := #[]
   let mut depth := 0
-  let mut inString := false
+  let mut stack : List Mode := []
   for h : i in [0:lines.size] do
     let cs := lines[i].toList.toArray
+    let n := cs.size
     let mut hasCode := false
-    let mut onlyComments := true
     let mut lineComment : Option Nat := none
     let mut j := 0
-    while j < cs.size do
+    while j < n do
       let c := cs[j]!
       let next := cs[j + 1]?
-      if inString then
+      let prevIdent := j > 0 && isIdentChar cs[j - 1]!
+      match stack with
+      | .str interp :: rest =>
         hasCode := true
         if c == '\\' then j := j + 2
-        else
-          if c == '"' then inString := false
-          j := j + 1
-      else if depth > 0 then
-        if c == '/' && next == some '-' then depth := depth + 1; j := j + 2
-        else if c == '-' && next == some '/' then depth := depth - 1; j := j + 2
+        else if c == '"' then stack := rest; j := j + 1
+        else if interp && c == '{' then stack := .interp 0 :: stack; j := j + 1
         else j := j + 1
-      else if c == '-' && next == some '-' then
-        lineComment := some j; j := cs.size
-      else if c == '/' && next == some '-' then depth := 1; j := j + 2
-      else if c == '-' && next == some '/' then
-        -- the lines began inside a block comment: up to here, all of it is comment
-        out := out.map fun _ => .comment
-        hasCode := false
-        j := j + 2
-      else if c == '\'' && cs[j + 1]? == some '"' && cs[j + 2]? == some '\'' then
-        hasCode := true; j := j + 3
-      else if c == '"' then hasCode := true; inString := true; j := j + 1
-      else
-        if !isBlank c then hasCode := true
-        j := j + 1
-    onlyComments := !hasCode
+      | .raw hashes :: rest =>
+        hasCode := true
+        if c == '"' && (List.range hashes).all (fun k => cs[j + 1 + k]? == some '#') then
+          stack := rest; j := j + 1 + hashes
+        else j := j + 1
+      | _ =>
+        if depth > 0 then
+          if c == '/' && next == some '-' then depth := depth + 1; j := j + 2
+          else if c == '-' && next == some '/' then depth := depth - 1; j := j + 2
+          else j := j + 1
+        else if c == '-' && next == some '-' then
+          lineComment := some j; j := n
+        else if c == '/' && next == some '-' then depth := 1; j := j + 2
+        else if c == '-' && next == some '/' then
+          if slice then
+            -- the lines began inside a block comment: up to here, all of it is comment
+            out := out.map fun _ => .comment
+            hasCode := false
+          else
+            strays := strays.push (first + i)
+            hasCode := true
+          j := j + 2
+        else if c == '«' then
+          hasCode := true
+          j := ((cs.extract (j + 1) n).findIdx? (· == '»')).map (j + 2 + ·) |>.getD n
+        else if c == '"' then
+          let interp := j ≥ 2 && cs[j - 1]! == '!' && isIdentChar cs[j - 2]!
+          stack := .str interp :: stack; hasCode := true; j := j + 1
+        else if c == 'r' && !prevIdent &&
+            (let k := ((cs.extract (j + 1) n).toList.takeWhile (· == '#')).length
+             cs[j + 1 + k]? == some '"') then
+          let k := ((cs.extract (j + 1) n).toList.takeWhile (· == '#')).length
+          stack := .raw k :: stack; hasCode := true; j := j + 2 + k
+        else if c == '\'' && !prevIdent && next == some '\\' then
+          -- an escaped character literal runs to its closing `'`
+          hasCode := true
+          j := ((cs.extract (j + 3) (min n (j + 12))).findIdx? (· == '\'')).map (j + 4 + ·)
+            |>.getD (j + 1)
+        else if c == '\'' && !prevIdent && cs[j + 2]? == some '\'' then
+          hasCode := true; j := j + 3
+        else
+          match stack with
+          | .interp b :: rest =>
+            if c == '{' then stack := .interp (b + 1) :: rest
+            else if c == '}' then stack := if b == 0 then rest else .interp (b - 1) :: rest
+          | _ => pure ()
+          if !isBlank c then hasCode := true
+          j := j + 1
     let kind : LineKind :=
-      if !onlyComments then .code
+      if hasCode then .code
       else match lineComment with
         | some col =>
           if (cs.extract 0 col).all isBlank then
-            classifyComment (first + i) col (String.ofList (cs.extract (col + 2) cs.size).toList)
+            classifyComment (first + i) col (String.ofList (cs.extract (col + 2) n).toList)
           else .comment
         | none => if cs.all isBlank then .blank else .comment
     out := out.push kind
-  return out
+  return (out, strays)
 
 /-- A marker with the lines it marks, `[start, stop]` from 1. -/
 structure Mark where
@@ -201,14 +258,16 @@ structure Scan where
   problems : Array (Nat × String) := #[]
   deriving Inhabited
 
-/-- The markers in `lines`, the first being line `first` of its file, and the lines they mark. -/
-def scan (lines : Array String) (first : Nat := 1) : Scan := Id.run do
-  let kinds := classifyLines lines first
+/-- The markers in `lines`, the first being line `first` of its file, and the lines they mark.
+`slice` is for lines that may start inside a block comment; see `classifyLines`. -/
+def scan (lines : Array String) (first : Nat := 1) (slice := false) : Scan := Id.run do
+  let (kinds, strays) := classifyLines lines first slice
   let n := kinds.size
   let isCode (k : Nat) : Bool := match kinds[k]! with | .code => true | _ => false
   let isBoundary (k : Nat) : Bool := match kinds[k]! with
     | .marker _ | .stop | .malformed _ => true | _ => false
-  let mut r : Scan := {}
+  let stray := "a block-comment closer that closes nothing; the scanner may have misread this file"
+  let mut r : Scan := { problems := strays.map fun l => (l, stray) }
   let mut i := 0
   while i < n do
     match kinds[i]! with
@@ -260,9 +319,14 @@ def lineOf (fm : FileMap) (line : Nat) : String :=
   let text := String.Pos.Raw.extract fm.source (fm.lineStart line) (fm.lineStart (line + 1))
   if text.endsWith "\n" then (text.dropEnd 1).toString else text
 
+/-- Is the text code, to a lexer that starts outside comments and strings? -/
+def isCodeText (text : String) : Bool :=
+  match (classifyLines #[text]).1[0]? with | some LineKind.code => true | _ => false
+
 /-- Checks the markers in a command and in the comment lines just above it: that they parse, cite
-a declared source, and mark lines inside the command. It reads only those lines and the lines up
-to the next line of code in the first column, so it costs each command its own length. -/
+a declared source, and mark lines inside the command. It reads those lines and the lines after
+the command up to the next line of code indented no more than the command, so each command costs
+about its own length. -/
 def stepsLinter : Linter where
   run := withSetOptionIn fun stx => do
     unless Linter.getLinterValue linter.cite.steps (← Linter.getLinterOptions) do return
@@ -271,24 +335,23 @@ def stepsLinter : Linter where
     let start := fm.toPosition range.start
     let first := start.line
     let last := (fm.toPosition range.stop).line
-    let lastLine := fm.getLastLine
-    -- the comment and blank lines just above the command belong to it, unless another command
-    -- starts earlier on its first line
+    let firstLine := lineOf fm first
+    let indent := indentOf firstLine
+    -- the comment and blank lines just above the command belong to it, unless code before the
+    -- command on its first line shows that another command ends there
     let mut top := first
-    if start.column == indentOf (lineOf fm first) then
-      while top > 1 && (match (classifyLines #[lineOf fm (top - 1)] (top - 1))[0]! with
-          | .code => false | _ => true) do
+    if isCodeText (String.ofList (firstLine.toList.take start.column)) then
+      top := first + 1
+    else
+      while top > 1 && !isCodeText (lineOf fm (top - 1)) do
         top := top - 1
-    else top := first + 1
-    -- the lines after the command, up to the next line of code in the first column, show where
+    -- the lines after the command, up to the next command at its indentation or less, show where
     -- a range that runs past it would end
     let mut bottom := last
-    while bottom < lastLine && !(indentOf (lineOf fm (bottom + 1)) == 0 &&
-        (match (classifyLines #[lineOf fm (bottom + 1)] (bottom + 1))[0]! with
-          | .code => true | _ => false)) do
+    while bottom < fm.getLastLine && !(isCodeText (lineOf fm (bottom + 1)) &&
+        indentOf (lineOf fm (bottom + 1)) ≤ indent) do
       bottom := bottom + 1
-    let lines := (Array.range (bottom - top + 1)).map (lineOf fm <| top + ·)
-    let r := scan lines top
+    let r := scan ((Array.range (bottom - top + 1)).map (lineOf fm <| top + ·)) top (slice := true)
     let env ← getEnv
     for (line, msg) in r.problems do
       if line ≤ last then Linter.logLint linter.cite.steps (lineRef fm line) m!"{msg}"

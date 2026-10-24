@@ -5,7 +5,8 @@ Lean companion (rkirov/linear-algebra-done-right-lean at `94a528c`).
 
 - Its exporter infers which declaration formalizes which item from Rado's conventions,
   `/-! 2.6 … -/` headers and `exercise_2A_4a` names, and 103 curated attributions. Those are among
-  its 109 overrides; the other 6 are about the book.
+  its 109 overrides; the other 6 are 5 corrections of displayed equations and the note of one
+  checked absence.
 - It takes proof steps from `proof_steps.json`.
 
 Here chapter 1's links are written into the Lean instead, and exported back.
@@ -17,7 +18,7 @@ Here chapter 1's links are written into the Lean instead, and exported back.
    pushed). It reads the exporter's own inputs, the ones that produced the companion's
    annotations.
    - 122 named declarations got 134 `@[cite …]` tags, merged into their attribute lists. One of
-     them is in Section 6A; it is linked to Exercise 1B.8.
+     them, in Section 6A, is linked to Exercise 1B.8.
    - 72 `example`s got 82 `cite … in`, and 16 `recall`s got 16.
    - Mathlib's `Submodule` got `attribute [cite ladr4e "1.33"] Submodule`.
    - The chapter's 34 proof steps have 45 Lean ranges, which got 44 markers and one `-- cite end`.
@@ -35,9 +36,11 @@ Here chapter 1's links are written into the Lean instead, and exported back.
    - Tag lines are mapped back to the untagged files at `94a528c`, the commit the annotations pin.
 4. `cite_ll.py`, the package's own exporter, wrote `out/generic/ladr4e.jsonl` and
    `out/generic/mathlib.jsonl`.
-   - The PDF regions, kinds and statuses come from `out/layout.json`, which
-     `layout_from_annotations.py` read from the companion's annotations. Where an item is on the
-     page does not depend on what links it.
+   - Where an item is on the page does not depend on what links it. The PDF regions therefore come
+     from `out/layout.json`, which `layout_from_annotations.py` read from the companion's
+     annotations.
+   - Kinds and statuses come from the same file. They are copied, not derived from the tags, and
+     the comparison below leaves them out.
    - The Literature Links checker reports 295 annotations and 0 problems.
 
 ## Results
@@ -64,12 +67,15 @@ Every proof step is identical, and so is every record outside chapter 1.
 
 `compare_links.py` checks the links of step 4 against the companion's links for chapter 1. A link
 is its id and relation, and each Lean end's location, role and title (an exercise's part). All 264
-match: 233 item links and 31 proof steps. The chapter's 4 checked absences are not tags: one item
-and 3 proof steps that no Lean carries out.
+match: 233 item links and 31 proof steps. One item and 3 proof steps have no Lean that carries them
+out; these 4 checked absences are not tags.
 
 `mutate.py` damages the dump in ten ways: it deletes, moves or changes a citation's relation, role
-or part, deletes the adopted mathlib link, and shifts, pads, drops or changes a step marker. Both
-paths catch all ten. Each either reports a difference or refuses the dump.
+or part, deletes the adopted mathlib link, and shifts, pads, drops or changes a step marker. First
+the unmutated dump runs as a control, and neither path reports a difference. Then both paths catch
+all ten mutations: each either reports a difference or refuses the dump.
+
+The whole tagged project builds (3,061 jobs).
 
 ## What the tags carry, and what they do not
 

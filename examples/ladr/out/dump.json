@@ -356,7 +356,10 @@
    "name": "ladr4e",
    "module": "LinearAlgebraDoneRightLean.Sources",
    "fields":
-   {"uri": "https://linear.axler.net/LADR4e.pdf", "type": "pdf", "doc": ""}}],
+   {"uri": "https://linear.axler.net/LADR4e.pdf",
+    "type": "pdf",
+    "doc":
+    "Sheldon Axler, *Linear Algebra Done Right*, 4th edition (Springer, 2024)."}}],
  "roots": ["LinearAlgebraDoneRightLean"],
  "modules":
  ["LinearAlgebraDoneRightLean.Sources",

@@ -75,7 +75,7 @@ def classify_comment(line: int, column: int, text: str):
     if not (len(ws[2]) >= 2 and ws[2].endswith('"')):
         return ("malformed", 'the entry has no closing `"`')
     entry = ws[2][1:-1]
-    if all(c.isspace() for c in entry):
+    if all(c in " \t\r\n" for c in entry):
         return ("malformed", "the entry is empty")
     if ws[3:4] != ["step"]:
         return ("malformed", "expected `step` after the entry")
@@ -98,22 +98,41 @@ def classify_comment(line: int, column: int, text: str):
                        "steps": [int(w) for w in nums], "rel": rel})
 
 
-def classify_lines(lines: list[str], first: int = 1) -> list[tuple]:
+def is_ident_char(c: str) -> bool:
+    return is_alpha(c) or is_digit(c) or c in "_'!?" or ord(c) > 127
+
+
+def classify_lines(lines: list[str], first: int = 1, slice: bool = False) -> tuple[list[tuple], list[int]]:
     out: list[tuple] = []
-    depth, in_string = 0, False
-    for i, text in enumerate(lines):
-        cs = text
+    strays: list[int] = []
+    depth = 0
+    stack: list[tuple] = []          # ("str", interp) | ("raw", hashes) | ("interp", braces); last is the top
+    for i, cs in enumerate(lines):
+        n = len(cs)
         has_code, line_comment, j = False, None, 0
-        while j < len(cs):
+        while j < n:
             c = cs[j]
-            nxt = cs[j + 1] if j + 1 < len(cs) else None
-            if in_string:
+            nxt = cs[j + 1] if j + 1 < n else None
+            prev_ident = j > 0 and is_ident_char(cs[j - 1])
+            top = stack[-1] if stack else None
+            if top and top[0] == "str":
                 has_code = True
                 if c == "\\":
                     j += 2
+                elif c == '"':
+                    stack.pop()
+                    j += 1
+                elif top[1] and c == "{":
+                    stack.append(("interp", 0))
+                    j += 1
                 else:
-                    if c == '"':
-                        in_string = False
+                    j += 1
+            elif top and top[0] == "raw":
+                has_code = True
+                if c == '"' and all(j + 1 + k < n and cs[j + 1 + k] == "#" for k in range(top[1])):
+                    stack.pop()
+                    j += 1 + top[1]
+                else:
                     j += 1
             elif depth > 0:
                 if c == "/" and nxt == "-":
@@ -126,22 +145,49 @@ def classify_lines(lines: list[str], first: int = 1) -> list[tuple]:
                     j += 1
             elif c == "-" and nxt == "-":
                 line_comment = j
-                j = len(cs)
+                j = n
             elif c == "/" and nxt == "-":
                 depth = 1
                 j += 2
             elif c == "-" and nxt == "/":
-                out = [("comment",) for _ in out]
-                has_code = False
+                if slice:
+                    out = [("comment",) for _ in out]
+                    has_code = False
+                else:
+                    strays.append(first + i)
+                    has_code = True
                 j += 2
-            elif c == "'" and cs[j + 1:j + 3] == "\"'":
+            elif c == "«":
+                has_code = True
+                k = cs.find("»", j + 1)
+                j = n if k < 0 else k + 1
+            elif c == '"':
+                interp = j >= 2 and cs[j - 1] == "!" and is_ident_char(cs[j - 2])
+                stack.append(("str", interp))
+                has_code = True
+                j += 1
+            elif c == "r" and not prev_ident and (lambda k: j + 1 + k < n and cs[j + 1 + k] == '"')(
+                    len(cs[j + 1:]) - len(cs[j + 1:].lstrip("#"))):
+                k = len(cs[j + 1:]) - len(cs[j + 1:].lstrip("#"))
+                stack.append(("raw", k))
+                has_code = True
+                j += 2 + k
+            elif c == "'" and not prev_ident and nxt == "\\":
+                has_code = True
+                k = cs.find("'", j + 3, min(n, j + 12))
+                j = j + 1 if k < 0 else k + 1
+            elif c == "'" and not prev_ident and j + 2 < n and cs[j + 2] == "'":
                 has_code = True
                 j += 3
-            elif c == '"':
-                has_code = True
-                in_string = True
-                j += 1
             else:
+                if top and top[0] == "interp":
+                    if c == "{":
+                        stack[-1] = ("interp", top[1] + 1)
+                    elif c == "}":
+                        if top[1] == 0:
+                            stack.pop()
+                        else:
+                            stack[-1] = ("interp", top[1] - 1)
                 if not is_blank(c):
                     has_code = True
                 j += 1
@@ -153,17 +199,18 @@ def classify_lines(lines: list[str], first: int = 1) -> list[tuple]:
         else:
             kind = ("blank",) if all(is_blank(c) for c in cs) else ("comment",)
         out.append(kind)
-    return out
+    return out, strays
 
 
-def scan(lines: list[str], first: int = 1) -> dict:
+def scan(lines: list[str], first: int = 1, slice: bool = False) -> dict:
     """{"markers", "marks", "problems"} as `Cite.scan` returns them; a mark is the marker's fields
     with `start` and `stop`."""
-    kinds = classify_lines(lines, first)
+    kinds, strays = classify_lines(lines, first, slice)
     n = len(kinds)
     code = lambda k: kinds[k][0] == "code"
     boundary = lambda k: kinds[k][0] in ("marker", "stop", "malformed")
-    r = {"markers": [], "marks": [], "problems": []}
+    stray = "a block-comment closer that closes nothing; the scanner may have misread this file"
+    r = {"markers": [], "marks": [], "problems": [(line, stray) for line in strays]}
     i = 0
     while i < n:
         kind = kinds[i][0]

@@ -140,3 +140,17 @@ book 9.4: the example at CiteTest.Basic:120
 /-- info: hygienic 1: fromMacro -/
 #guard_msgs in
 #cite_tags hygienic
+
+set_option doc.verso true in
+/-- A *Verso* docstring. -/
+cite_source versoBook "Verso"
+
+/-- error: the field `doc` is given twice: a docstring is `doc` -/
+#guard_msgs in
+/-- Doc. -/
+cite_source docTwice "Twice" (doc := "explicit")
+
+open Lean Cite in
+/-- info: [(doc, A *Verso* docstring.)] -/
+#guard_msgs in
+run_meta logInfo m!"{(sourceDecls (← getEnv) `versoBook)[0]!.fields}"

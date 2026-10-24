@@ -24,9 +24,13 @@ one per proof step:
   `example` or other command without a name, n being the line of its keyword, after any docstring
   and attributes; `{declaration, module, lines: [a, b]}` for the lines of a proof step.
 
-`<out>/mathlib.jsonl` holds Mathlib's own cross-references (`@[stacks]` and the rest), one
-annotation per tag that some known repository holds, from the database entry (an `html` end with
-its identifier) to the declaration.
+`<out>/mathlib.jsonl` holds the cross-references of Mathlib's attributes (`@[stacks]` and the
+rest), one annotation per tag on a declaration whose repository is known, from the database entry
+(an `html` end with its identifier) to the declaration. A file is written only when it has an
+annotation.
+
+Line numbers are Lean's: lines end at line feeds. Literature Links also ends a line at a lone
+carriage return, so in a file that has one, later lines are numbered one less here than there.
 
 Identical annotations are written once. No folder defaults are written, so each annotation is
 whole. Standard library only.
@@ -66,22 +70,23 @@ def main() -> int:
     dump = json.loads(args.dump.read_text(encoding="utf-8"))
     layout = json.loads(args.layout.read_text(encoding="utf-8")) if args.layout else {}
     sources = {s["name"]: s for s in dump["sources"]}
-    repos = [(root, args.project, args.commit) for root in dump["roots"]]
+    # module prefix -> (repository, commit); an explicit --lean-repo overrides the rest
+    repos = {root: (args.project, args.commit) for root in dump["roots"]}
     if args.mathlib_commit:
-        repos.append(("Mathlib", MATHLIB, args.mathlib_commit))
+        repos["Mathlib"] = (MATHLIB, args.mathlib_commit)
     for spec in args.lean_repo:
         prefix, _, rest = spec.partition("=")
         url, _, sha = rest.rpartition("@")
         if not (prefix and url and sha):
             sys.exit(f"--lean-repo {spec}: expected PREFIX=URL@SHA")
-        repos.append((prefix, url, sha))
+        repos[prefix] = (url, sha)
     notes = collections.Counter()
 
     def repo_of(module: str | None) -> tuple[str, str] | None:
         if not module:
             return None
-        hits = [(p, u, c) for p, u, c in repos if module == p or module.startswith(p + ".")]
-        return max(hits, key=lambda h: len(h[0]))[1:] if hits else None
+        hits = [p for p in repos if module == p or module.startswith(p + ".")]
+        return repos[max(hits, key=len)] if hits else None
 
     def lean_end(module: str | None, location: dict) -> dict | None:
         repo = repo_of(module)

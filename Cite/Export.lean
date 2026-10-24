@@ -50,6 +50,9 @@ def declKind (env : Environment) (n : Name) : String :=
   | some (.quotInfo _) => "quot"
   | none => "unknown"
 
+/-- A module's name as Literature Links wants it: dotted, without `«»`, naming its file. -/
+def modName (m : Name) : String := m.toString (escape := false)
+
 /-- The module that declares `n`. -/
 def moduleOf? (env : Environment) (n : Name) : Option Name := do
   let idx ← env.getModuleIdxFor? n
@@ -65,7 +68,7 @@ def declJson (n : Name) : CoreM Json := do
   return Json.mkObj <|
     [("declaration", toJson shown.toString), ("kind", toJson (declKind env n))] ++
     (if isPrivateName n then [("private", toJson true)] else []) ++
-    ((moduleOf? env n).map fun m => ("module", toJson m.toString)).toList ++
+    ((moduleOf? env n).map fun m => ("module", toJson (modName m))).toList ++
     (ranges.map fun r => ("lines", toJson [r.range.pos.line, r.range.endPos.line])).toList
 
 /-- Pairs whose value is empty are left out. -/
@@ -76,15 +79,15 @@ def citationJson (c : Citation) : CoreM Json := do
   let target ← match c.target with
     | .decl n => declJson n
     | .lines mod line stop kw => pure (Json.mkObj
-        [("module", toJson mod.toString), ("lines", toJson [line, stop]), ("keyword", toJson kw)])
+        [("module", toJson (modName mod)), ("lines", toJson [line, stop]), ("keyword", toJson kw)])
   return Json.mkObj <| [("source", toJson c.source.toString), ("id", toJson c.id)] ++
     nonEmpty [("rel", c.rel), ("role", c.role), ("part", c.part), ("comment", c.comment),
-              ("citedIn", c.module.toString)] ++
+              ("citedIn", modName c.module)] ++
     [("target", target)]
 
 def sourceJson (s : Source) : Json :=
   Json.mkObj [("name", toJson s.name.toString), ("title", toJson s.title),
-    ("module", toJson s.module.toString),
+    ("module", toJson (modName s.module)),
     ("fields", Json.mkObj (s.fields.toList.map fun (k, v) => (k, toJson v)))]
 
 /-- The declarations of module `mod` that have declaration ranges, with those ranges. Recursors and
@@ -125,6 +128,7 @@ def stepsOf (mod : Name) (cs : Array Citation) : CommandElabM (Array Json) := do
   for mk in r.marks do
     let m := mk.marker
     if let .error msg := findSource (← getEnv) m.source then
+      if (sourceDecls (← getEnv) m.source).size > 1 then throwError m!"{path}:{m.line}: {msg}"
       logWarning m!"{path}:{m.line}: {msg}; the marker is left out"
       continue
     -- the innermost declaration whose lines hold the marked ones
@@ -136,7 +140,7 @@ def stepsOf (mod : Name) (cs : Array Citation) : CommandElabM (Array Json) := do
     out := out.push <| Json.mkObj <|
       [("source", toJson m.source.toString), ("id", toJson m.id),
        ("steps", toJson m.steps)] ++ nonEmpty [("rel", m.rel)] ++
-      [("module", toJson mod.toString), ("marker", toJson m.line),
+      [("module", toJson (modName mod)), ("marker", toJson m.line),
        ("lines", toJson [mk.start, mk.stop])] ++
       (holder.map fun (n, _, _) =>
         ("declaration", toJson ((privateToUserName? n).getD n).toString)).toList ++
@@ -186,8 +190,6 @@ elab (name := citeExport) "#cite_export " path:str roots:(ppSpace ident)* : comm
   if env.header.isModule then
     throwError "`#cite_export` needs a file that does not start with `module`, which sees every \
       declaration whole"
-  for s in sources env do
-    if let .error msg := findSource env s.name then throwError msg
   let cs := citations env
   let citationsJ ← liftCoreM <| cs.mapM citationJson
   let rootNames := roots.map (·.getId)
@@ -195,6 +197,12 @@ elab (name := citeExport) "#cite_export " path:str roots:(ppSpace ident)* : comm
   let mut steps := #[]
   for mod in mods do
     steps := steps ++ (← stepsOf mod cs)
+  -- a source that two modules declare is an error where it is used, and a warning otherwise
+  let used := (cs.map (·.source)) ++ steps.filterMap fun j => (j.getObjValAs? String "source").toOption.map (·.toName)
+  let names := (sources env).foldl (init := #[]) fun ns s => if ns.contains s.name then ns else ns.push s.name
+  for name in names do
+    if let .error msg := findSource env name then
+      if used.contains name then throwError msg else logWarning m!"{msg}; no citation uses it"
   let mathlib ← readMathlib
   let mathlibJ ← liftCoreM <| (mathlib.map (·.2)).getD #[] |>.mapM
     fun (n, db, url, tag, comment) => do
@@ -205,8 +213,8 @@ elab (name := citeExport) "#cite_export " path:str roots:(ppSpace ident)* : comm
   let out := Json.mkObj [
     ("format", toJson "cite-export/1"),
     ("lean", toJson Lean.versionString),
-    ("roots", toJson (rootNames.map (·.toString))),
-    ("modules", toJson (mods.map (·.toString))),
+    ("roots", toJson (rootNames.map modName)),
+    ("modules", toJson (mods.map modName)),
     ("sources", toJson ((sources env).map sourceJson)),
     ("citations", toJson citationsJ),
     ("steps", toJson steps),

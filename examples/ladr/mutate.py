@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check that the comparisons notice a wrong tag: mutate out/dump.json in ten ways, and for each,
-rerun both paths (export_from_tags.py with compare.py, and cite_ll.py with compare_links.py).
+rerun both paths (export_from_tags.py with compare.py, and cite_ll.py with compare_links.py). The
+unmutated dump runs first, as a control that both paths must pass.
 
     mutate.py <companion repo> <untagged repo> <tagged repo> <scratch dir>
 
@@ -17,6 +18,8 @@ companion, original, tagged, scratch = map(Path, sys.argv[1:5])
 dump = json.loads((here / "out" / "dump.json").read_text(encoding="utf-8"))
 commit = subprocess.run(["git", "-C", tagged, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
 IGNORE = "extensions.org.mathlib-initiative.formal-companion.overlay.provenance.method"
+# the Mathlib of the companion at 94a528c, which holds `Submodule`
+MATHLIB_COMMIT = "5450b53e5ddc75d46418fabb605edbf36bd0beb6"
 
 
 def cite(d, pred):
@@ -75,9 +78,13 @@ def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True, cwd=here)
 
 
+def m_none(d):
+    pass
+
+
 results = {}
-for name, mutate in [(f.__name__[2:], f) for f in (m_delete, m_rel, m_role, m_part, m_move, m_shift, m_pad,
-                                                    m_drop_step, m_step_rel, m_submodule)]:
+for name, mutate in [(f.__name__[2:], f) for f in (m_none, m_delete, m_rel, m_role, m_part, m_move, m_shift,
+                                                    m_pad, m_drop_step, m_step_rel, m_submodule)]:
     d = copy.deepcopy(dump)
     mutate(d)
     work = scratch / name
@@ -93,7 +100,7 @@ for name, mutate in [(f.__name__[2:], f) for f in (m_delete, m_rel, m_role, m_pa
         first = "compare.py found differences" if c.returncode else "NOT CAUGHT"
     g = run([sys.executable, "../../scripts/cite_ll.py", work / "dump.json", "--project",
              "https://github.com/rkirov/linear-algebra-done-right-lean", "--commit", commit,
-             "--layout", "out/layout.json", "--out", work / "generic"])
+             "--mathlib-commit", MATHLIB_COMMIT, "--layout", "out/layout.json", "--out", work / "generic"])
     if g.returncode:
         second = "cite_ll failed: " + g.stderr.strip().splitlines()[-1]
     else:
@@ -105,4 +112,9 @@ for name, mutate in [(f.__name__[2:], f) for f in (m_delete, m_rel, m_role, m_pa
                   else "compare_links flagged an added line" if flagged else "NOT CAUGHT")
     results[name] = (first, second)
     print(f"{name:10} | {first} | {second}")
+# the unmutated dump is the control: both paths must find nothing there, or a catch means nothing
+control = results.pop("none")
+if control != ("NOT CAUGHT", "NOT CAUGHT"):
+    print("the control run reports a difference, so the catches above show nothing")
+    sys.exit(1)
 sys.exit(1 if any("NOT CAUGHT" in r for pair in results.values() for r in pair) else 0)
