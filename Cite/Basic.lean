@@ -41,17 +41,13 @@ structure Source where
 def Source.field? (s : Source) (key : String) : Option String :=
   s.fields.find? (·.1 == key) |>.map (·.2)
 
-/-- The address of the entry `id`, when the source's `uri` is a template containing `{id}`. -/
-def Source.entryUri? (s : Source) (id : String) : Option String := do
-  let uri ← s.field? "uri"
-  if (uri.splitOn "{id}").length > 1 then some (uri.replace "{id}" id) else none
-
 /-- What a citation is attached to. -/
 inductive Target where
   /-- A declaration, by its full name. -/
   | decl (name : Name)
   /-- A command that declares nothing by name, such as an `example` or a `recall`: its module, the
-  line of its keyword, its last line, and the keyword. -/
+  line of its keyword (after any docstring, attributes and modifiers), its last line, and the
+  keyword. -/
   | lines (module : Name) (line stop : Nat) (keyword : String)
   deriving Inhabited, Repr, BEq
 
@@ -73,14 +69,19 @@ structure Citation where
   comment : String := ""
   /-- The module that made the citation, which for `attribute [cite …] n` is not `n`'s. -/
   module : Name := .anonymous
-  deriving Inhabited, Repr
+  deriving Inhabited, Repr, BEq
 
-/-- The registry of sources: those declared in this module and in every imported one. -/
-initialize sourceExt : SimplePersistentEnvExtension Source (NameMap Source) ←
+/-- Add a declaration of a source to the registry. -/
+def addSourceDecl (m : NameMap (Array Source)) (s : Source) : NameMap (Array Source) :=
+  m.insert s.name (((m.find? s.name).getD #[]).push s)
+
+/-- The registry of sources: those declared in this module and in every imported one, by name.
+Two modules that do not import each other can declare the same name; `findSource` then refuses
+it, naming both. -/
+initialize sourceExt : SimplePersistentEnvExtension Source (NameMap (Array Source)) ←
   registerSimplePersistentEnvExtension {
-    addEntryFn := fun m s => m.insert s.name s
-    addImportedFn := fun as => as.foldl (init := {}) fun m a => a.foldl (init := m) fun m s =>
-      m.insert s.name s
+    addEntryFn := addSourceDecl
+    addImportedFn := fun as => as.foldl (init := {}) fun m a => a.foldl (init := m) addSourceDecl
   }
 
 /-- The citations recorded by `@[cite]` and `cite … in`. `addImportedFn` is constant, as in
@@ -91,21 +92,32 @@ initialize citeExt : SimplePersistentEnvExtension Citation (Array (Array Citatio
     addEntryFn := fun s _ => s
   }
 
-/-- The source named `name`, if it is declared here or in an imported module. -/
-def findSource? (env : Environment) (name : Name) : Option Source :=
-  (sourceExt.getState env).find? name
+/-- The declarations of the source named `name`: none, one, or more when modules clash. -/
+def sourceDecls (env : Environment) (name : Name) : Array Source :=
+  ((sourceExt.getState env).find? name).getD #[]
 
-/-- Every declared source, ordered by name. -/
+/-- The source named `name`, declared here or in an imported module, or why there is none. -/
+def findSource (env : Environment) (name : Name) : Except MessageData Source :=
+  match sourceDecls env name with
+  | #[s] => .ok s
+  | #[] => .error m!"unknown source `{name}`; declare it with `cite_source`"
+  | ss => .error m!"the source `{name}` is declared in several modules: \
+      {", ".intercalate (ss.toList.map (·.module.toString))}"
+
+/-- Every declared source, ordered by name, clashing declarations included. -/
 def sources (env : Environment) : Array Source :=
-  (sourceExt.getState env).toArray.map (·.2) |>.qsort (·.name.toString < ·.name.toString)
+  (sourceExt.getState env).toArray.flatMap (·.2) |>.qsort (·.name.toString < ·.name.toString)
 
 /-- Every citation, those of imported modules first, in the order they were made. -/
 def citations (env : Environment) : Array Citation :=
   let s := PersistentEnvExtension.getState citeExt env
   s.2.flatten ++ s.1.reverse.toArray
 
-/-- Record a citation in the current module. -/
-def addCitation {m : Type → Type} [MonadEnv m] (c : Citation) : m Unit :=
+/-- Record a citation in the current module, unless the module already made the same one; whether
+it was new. -/
+def addCitation {m : Type → Type} [Monad m] [MonadEnv m] (c : Citation) : m Bool := do
+  if (citeExt.getEntries (← getEnv)).contains c then return false
   modifyEnv (citeExt.addEntry · c)
+  return true
 
 end Cite

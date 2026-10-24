@@ -26,8 +26,8 @@ theorem bar : True := by
   trivial
   -- cite end
   trivial"
-  let (marks, _) := scan (splitLines src)
-  marks.toList.map fun (m : Mark) => (m.marker.id, m.marker.steps.toList, m.start, m.stop)
+  (scan (splitLines src)).marks.toList.map fun (m : Mark) =>
+    (m.marker.id, m.marker.steps.toList, m.start, m.stop)
 
 theorem t1 : 1 + 1 = 2 := by
   -- cite book "1.2" step 1

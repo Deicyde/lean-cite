@@ -84,11 +84,12 @@ def main() -> int:
         return maps[rel]
 
     def span(module: str, a: int, b: int) -> tuple[int, int]:
+        """The untagged lines of a tagged range. The scanner starts and ends a range on a line of
+        code, so its first and last lines are lines of the untagged file, never added ones."""
         m = to_original(module)
-        kept = [m[k] for k in range(a, b + 1) if k in m]
-        if not kept:
-            sys.exit(f"{module} {a}-{b}: no line of the untagged file")
-        return kept[0], kept[-1]
+        if a not in m or b not in m:
+            sys.exit(f"{module} {a}-{b}: the range starts or ends on a line the tagging added")
+        return m[a], m[b]
 
     cites = [c for c in dump["citations"] if c["source"] == SOURCE]
     steps = [s for s in dump["steps"] if s["source"] == SOURCE]
@@ -177,16 +178,20 @@ def main() -> int:
             marks.setdefault((s["id"], k), []).append((path_of(s["module"]), a, b, s.get("rel", "")))
     proofs, unused = [], set(marks)
     for p in all_steps["proofs"]:
-        if p["item"] not in by_item:
+        if not in_chapter(p["item"], args.chapter):
             proofs.append(p)
             continue
+        if p["item"] not in by_item:
+            sys.exit(f"{p['item']}: a proof of the chapter that {args.book_steps} does not have")
         out = []
         for k, st in enumerate(by_item[p["item"]]["steps"], 1):
             found = sorted(marks.get((p["item"], k), []))
             unused.discard((p["item"], k))
-            rels = {r for *_, r in found}
+            rels = {r for *_, r in found if r}
             if len(rels) > 1:
-                sys.exit(f"{p['item']} step {k}: its markers disagree on the relation: {rels}")
+                sys.exit(f"{p['item']} step {k}: its markers state different relations: {rels}")
+            if found and not rels:
+                sys.exit(f"{p['item']} step {k}: no marker states its relation, which the exporter needs")
             relation = rels.pop() if found else st.get("relation")
             if relation is None:
                 sys.exit(f"{p['item']} step {k}: no marker and no relation in the book steps")

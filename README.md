@@ -3,10 +3,11 @@
 Tags in Lean source that say which entry of a book, article or database a declaration
 formalizes, and an exporter that turns them into
 [Literature Links](https://github.com/mathlib-initiative/literature-links) 2.0 annotations.
-It also reads Mathlib's own cross-references (`@[stacks]`, `@[kerodon]`, `@[wikidata]` and the rest).
+It also reads the cross-references of Mathlib's own attributes (`@[stacks]`, `@[kerodon]`,
+`@[wikidata]` and the rest).
 
-A prototype, kept locally; it depends on Lean core only. Built and tested with Lean 4.30.0-rc2
-and 4.36.0-rc1.
+A prototype, kept locally. It depends on Lean core only, and builds with Lean 4.30.0-rc2 and
+4.36.0-rc1.
 
 ## In Lean
 
@@ -35,47 +36,63 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
     _ = 0 := h 0
 ```
 
-- `cite_source` declares a source. The registry is open: any project declares its own, beside
-  those of the projects it imports. A `uri` containing `{id}` is a template for each entry's
-  address, as for a web database.
+- `cite_source` declares a source. Any project declares its own, beside those of the projects it
+  imports. Two modules that do not import each other can declare the same name. Citing that name
+  is then an error that names both modules.
+- A source's fields are free-form, for exporters. A `uri` containing `{id}` is a template for each
+  entry's address, as for a web database. `type` is the Literature Links type of its ends.
+  `registry` is its key in Literature Links `identifiers`.
 - `@[cite src "id"]` records that a declaration formalizes an entry. The options are
   `(rel := …)`, one of the Literature Links relations; `(role := …)`; and `(part := "a")`. A last
   string is a comment. `attribute [cite …] n` tags a declaration of another project, such as one
   of Mathlib's.
-- `cite src "id" in cmd` tags a command that has no name of its own: an `example`, a `recall`,
-  an unnamed `instance`. Lean elaborates an `example` and then discards it, together with what an
-  attribute on it recorded, so `@[cite]` on an `example` is an error pointing here. The form records
-  the lines of the command. A command cannot start with a non-reserved word, so `cite` becomes a
-  keyword wherever the package is imported, as `stacks` and `kerodon` are wherever Mathlib is.
-- `-- cite src "id" step k₁ k₂ … [relation]` marks the lines that carry out steps of a proof. The
-  range starts at the next line of code and ends before the next marker, before `-- cite end`, or
-  before the first line of code indented less than the marker. A marker in the first column ends
-  before the next line of code in the first column, where the next command starts. Consecutive
-  markers share one range.
+- `cite src "id" in cmd` tags a command that has no name of its own: an `example`, a `recall`, an
+  unnamed `instance`. Lean elaborates an `example` and then discards it, together with what an
+  attribute on it recorded, so `@[cite]` on an `example` is an error that points here.
+  - The form records the lines of the command, from its keyword, after any docstring, attributes,
+    modifiers, `open … in` and `set_option … in`.
+  - A command cannot start with a non-reserved word, so `cite` becomes a keyword wherever the
+    package is imported, as `stacks` and `kerodon` are wherever Mathlib is.
+- `-- cite src "id" step k₁ k₂ … [relation]` marks the lines that carry out steps of a proof.
+  - A marker is a line comment alone on its line, outside block comments, docstrings and strings.
+  - The range starts at the next line of code. It ends before the next marker or `-- cite end`,
+    or before the first line of code indented less than the marker. A marker in the first column
+    ends before the next line of code in the first column, which is usually the next command.
+  - `Cite/Steps.lean` states the grammar and the rule exactly.
 - `#cite_tags [src]` lists the citations, imported ones included.
-- `#cite_export "out.json" Root…` writes the sources, the citations, the step markers in the
-  modules under each `Root`, and Mathlib's cross-references, as JSON. Run it with
-  `lake env lean` from a file that imports what it should see.
+- `#cite_export "out.json" Root…` writes, as JSON:
+  - the sources and the citations;
+  - the step markers in the modules under each `Root`;
+  - the cross-references of Mathlib's attributes.
 
-Step markers are comments for three reasons:
+  Run it with `lake env lean` from a file that imports what it should see and does not start
+  with `module`.
+
+Step markers are comments for two reasons:
 
 - A tactic cannot mark a statement or a term-mode `calc`. In chapter 1 of *Linear Algebra Done
   Right*, 28 of the 45 Lean ranges of proof steps start at a declaration's statement or in term
   mode.
-- A proof is elaborated asynchronously, and what a tactic records there is discarded.
-- A linter cannot record either: Lean 4.30 runs linters under `withoutModifyingEnv`, or in a
-  separate task.
+- A linter cannot record what it reads, since Lean 4.30 runs linters under `withoutModifyingEnv`
+  or in a separate task.
 
-The linter `linter.cite.steps` therefore only checks the markers while a file compiles. It
-reports markers that do not parse, sources that are not declared, and ranges that run outside
-their command. `#cite_export` reads the markers with the same scanner.
+`#cite_export` therefore reads the markers from the source, and the linter `linter.cite.steps`
+only checks them while a file compiles. It reports:
 
-`@[cite]` leaves docstrings alone. Lean writes a declaration's own docstring after compiling it,
-and that write replaces anything an attribute appended before elaboration. Mathlib's
-`addCrossRefDoc` appends then, so Mathlib's link is lost on any declaration that has a docstring.
-This was checked with `@[stacks …]` at Mathlib `5450b53` (Lean 4.30.0-rc2), and with `@[stacks …]`
-and `@[wikidata …]` at a Mathlib of 2026-10-21 (Lean 4.36.0-rc1). Mathlib's own test tags only an
-undocumented declaration.
+- markers that do not parse, and markers that mark no code;
+- sources that are not declared;
+- ranges that run outside their command.
+
+The linter reads only each command's lines. On a file of 1,500 documented theorems and 6,004
+lines, each with a marker, compiling takes 0.75–0.9 s with the linter and 0.6 s without.
+
+Lean writes a declaration's own docstring after compiling it, and that write replaces what an
+attribute appended before elaboration. Mathlib's cross-reference attributes append their links
+then: inline in `@[stacks]` at Mathlib `5450b53`, through `addCrossRefDoc` since May 2026. So
+Mathlib's link is lost on any declaration that has a docstring. This was checked with `@[stacks …]`
+at Mathlib `5450b53` (Lean 4.30.0-rc2), and with `@[stacks …]` and `@[wikidata …]` at a Mathlib of
+2026-10-21 (Lean 4.36.0-rc1). Mathlib's own test tags only an undocumented declaration. `@[cite]`
+leaves docstrings alone, and links come from the exporter.
 
 ## Mathlib's cross-references
 
@@ -92,16 +109,20 @@ each layout Mathlib has had:
 
 ```sh
 python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
-  --mathlib-commit <sha> [--layout layout.json] --out annotations/
+  [--mathlib-commit <sha>] [--lean-repo <module prefix>=<URL>@<sha> …] \
+  [--layout layout.json] --out annotations/
 ```
 
-The output is one `<source>.jsonl` per source and `mathlib.jsonl`, each annotation valid on its
-own.
+The output is one `<source>.jsonl` per source and `mathlib.jsonl`, each annotation whole.
 
-- A web database's entry becomes an `html` end with its identifier.
-- A book's entry needs its place on the page, which tags cannot know. `--layout` supplies it,
-  from the book's layout tooling.
-- Without a layout, the end is the whole document, with the entry as its title.
+- A declaration's end names the repository of its module. Modules under the export's roots are the
+  project's; Mathlib's are Mathlib's with `--mathlib-commit`; others need `--lean-repo` or are
+  left out, with a message.
+- A templated source's entry becomes an end at its own address, `html` unless the source gives a
+  `type`, with the entry as an identifier.
+- A book's entry needs its place on the page, which tags cannot know. `--layout` supplies it from
+  the book's layout tooling, with each entry's kind and status. Without a layout, the end is the
+  whole document, with the entry as its title.
 
 ## Files
 
@@ -111,6 +132,6 @@ own.
 | `Cite/Attribute.lean` | `cite_source`, `@[cite]`, `cite … in`, `#cite_tags` |
 | `Cite/Steps.lean` | the step-marker scanner and its linter |
 | `Cite/Export.lean` | `#cite_export` and the reader of Mathlib's tags |
-| `CiteTest/` | tests (`lake build CiteTest`) |
+| `CiteTest/` | tests (`lake build CiteTest`); `scan_cases.json` is the scanner's corpus |
 | `scripts/cite_ll.py` | the Literature Links exporter |
 | `examples/ladr/` | chapter 1 of *Linear Algebra Done Right*, tagged and compared with its annotations |

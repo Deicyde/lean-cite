@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Compare the links `cite_ll.py` wrote from the tags with the companion's, for one chapter.
 
-A link is (id, relation, role, where the Lean end points); a proof step's is its id, relation and
-set of Lean ends. The tags' line numbers are those of the tagged branch, so they are mapped back to
-the untagged files first. Checked absences (`noMatch` with no Lean end) are the book's side, which
-no tag states, and are counted apart.
+A link is its id, relation and set of Lean ends, each end being where it points, its role and its
+title (an exercise's part). Kind and status are not compared: cite_ll.py takes both from the
+layout. The tags' line numbers are those of the tagged branch, so they are mapped back to the
+untagged files first; a range whose first or last line the tagging added is reported. Checked
+absences (`noMatch` with no Lean end) are the book's side, which no tag states, and are counted
+apart.
 
     compare_links.py <generic source.jsonl> <annotations/> <untagged repo> <tagged repo> <chapter>
 """
@@ -25,10 +27,10 @@ def back(module, lines):
         maps[rel] = line_map((Path(original) / rel).read_text(encoding="utf-8").split("\n"),
                              (Path(tagged) / rel).read_text(encoding="utf-8").split("\n"))
     m = maps[rel]
-    if len(lines) == 1:
-        return [m[lines[0]]]
-    kept = [m[k] for k in range(lines[0], lines[1] + 1) if k in m]
-    return [kept[0], kept[-1]]
+    if any(k not in m for k in lines):
+        print(f"a range on lines the tagging added: {module} {lines}")
+        return ["added"]
+    return [m[k] for k in lines]
 
 
 def where(end, mapped):
@@ -36,7 +38,8 @@ def where(end, mapped):
     # only the companion's own lines moved; mathlib's did not
     if mapped and "lines" in loc and end["uri"].endswith("linear-algebra-done-right-lean"):
         loc["lines"] = back(loc["module"], loc["lines"])
-    return (end.get("uri", "companion"), json.dumps(loc, sort_keys=True, ensure_ascii=False), end.get("role", "key"))
+    return (end.get("uri", "companion"), json.dumps(loc, sort_keys=True, ensure_ascii=False), end.get("role", "key"),
+            end.get("title", ""))
 
 
 def key(rec, mapped):

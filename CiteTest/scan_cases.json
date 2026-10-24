@@ -1,0 +1,289 @@
+[
+ {
+  "name": "basic",
+  "lines": [
+   "-- cite book \"1\" step 2",
+   "theorem foo : True := by",
+   "  -- cite book \"1\" step 3",
+   "  have h : True := by",
+   "    trivial",
+   "  -- cite book \"1\" step 4",
+   "  -- cite book \"2\" step 5",
+   "  exact h",
+   "",
+   "  -- cite book \"1\" step 6 7",
+   "  skip",
+   "-- cite book \"1\" step 1",
+   "theorem bar : True := by",
+   "  -- cite book \"1\" step 7",
+   "  trivial",
+   "  -- cite end",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "in block comment",
+  "lines": [
+   "/- a comment",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial",
+   "-/",
+   "theorem y : True := trivial"
+  ]
+ },
+ {
+  "name": "in docstring",
+  "lines": [
+   "/-- doc",
+   "  -- cite book \"1\" step 1",
+   "  more -/",
+   "theorem x : True := trivial"
+  ]
+ },
+ {
+  "name": "in module doc",
+  "lines": [
+   "/-!",
+   "```",
+   "-- cite book \"1\" step 1",
+   "theorem x : True := trivial",
+   "```",
+   "-/",
+   "def y := 1"
+  ]
+ },
+ {
+  "name": "nested comments",
+  "lines": [
+   "/- outer /- inner -/",
+   "-- cite book \"1\" step 1",
+   "-/",
+   "-- cite book \"1\" step 2",
+   "def y := 1"
+  ]
+ },
+ {
+  "name": "in string",
+  "lines": [
+   "def s := \"",
+   "-- cite book \"1\" step 1",
+   "\"",
+   "def t := 1"
+  ]
+ },
+ {
+  "name": "char literal quote",
+  "lines": [
+   "def c := '\"'",
+   "-- cite book \"1\" step 1",
+   "def t := 1"
+  ]
+ },
+ {
+  "name": "starts inside comment",
+  "lines": [
+   "  more text of a comment",
+   "  -- cite book \"1\" step 1",
+   "-/",
+   "-- cite book \"1\" step 2",
+   "def t := 1"
+  ]
+ },
+ {
+  "name": "code then comment",
+  "lines": [
+   "def t := 1 -- cite book \"1\" step 1",
+   "-- cite book \"1\" step 2",
+   "def u := 2"
+  ]
+ },
+ {
+  "name": "comment then code",
+  "lines": [
+   "/- c -/ def t := 1",
+   "-- cite book \"1\" step 2",
+   "/- c -/ def u := 2"
+  ]
+ },
+ {
+  "name": "lone cr",
+  "lines": [
+   "theorem x : True := by -- a\rb",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "tabs",
+  "lines": [
+   "theorem x : True := by",
+   "  --\tcite\tbook \"1\"\tstep\t1\t",
+   "  trivial",
+   "  -- cite book \"1\" step 2",
+   "\ttrivial"
+  ]
+ },
+ {
+  "name": "nbsp",
+  "lines": [
+   "theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "step zero",
+  "lines": [
+   "def x := 1",
+   "-- cite book \"1\" step 0",
+   "def y := 1",
+   "-- cite book \"1\" step 00",
+   "def z := 1"
+  ]
+ },
+ {
+  "name": "step underscore",
+  "lines": [
+   "-- cite book \"1\" step 1_0",
+   "def z := 1"
+  ]
+ },
+ {
+  "name": "unicode digits",
+  "lines": [
+   "-- cite book \"1\" step ١",
+   "def z := 1",
+   "-- cite book \"1\" step ²",
+   "def w := 1"
+  ]
+ },
+ {
+  "name": "empty entry",
+  "lines": [
+   "-- cite book \"\" step 1",
+   "def z := 1",
+   "-- cite book \"  \" step 1",
+   "def w := 1"
+  ]
+ },
+ {
+  "name": "unterminated",
+  "lines": [
+   "-- cite book \"1.26 step 2",
+   "def z := 1"
+  ]
+ },
+ {
+  "name": "bad source",
+  "lines": [
+   "-- cite x-y \"1\" step 1",
+   "def z := 1",
+   "-- cite 1abc \"1\" step 1",
+   "def w := 1",
+   "-- cite «x» \"1\" step 1",
+   "def v := 1"
+  ]
+ },
+ {
+  "name": "dotted source",
+  "lines": [
+   "-- cite my.book_2 \"1\" step 1",
+   "def z := 1"
+  ]
+ },
+ {
+  "name": "prose",
+  "lines": [
+   "-- cite the book here",
+   "def z := 1",
+   "-- cite book 1.2 step 1",
+   "def w := 1",
+   "-- cite end here",
+   "def v := 1"
+  ]
+ },
+ {
+  "name": "relation",
+  "lines": [
+   "-- cite book \"1\" step 1 closeMatch",
+   "def z := 1",
+   "-- cite book \"1\" step 1 sameAs",
+   "def w := 1",
+   "-- cite book \"1\" step 1 closeMatch extra",
+   "def v := 1"
+  ]
+ },
+ {
+  "name": "no code",
+  "lines": [
+   "theorem x : True := by",
+   "  trivial",
+   "  -- cite book \"1\" step 1",
+   "  -- cite end",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "at end of file",
+  "lines": [
+   "def z := 1",
+   "-- cite book \"1\" step 1"
+  ]
+ },
+ {
+  "name": "col0 match arms",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "def f : Nat → Nat",
+   "| 0 => 1",
+   "| _ + 1 => 2"
+  ]
+ },
+ {
+  "name": "consecutive columns",
+  "lines": [
+   "theorem x : True := by",
+   "    -- cite book \"1\" step 1",
+   "  -- cite book \"1\" step 2",
+   "    skip",
+   "  skip",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "separated markers",
+  "lines": [
+   "theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "",
+   "  -- cite book \"1\" step 2",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "trailing blank and comments",
+  "lines": [
+   "theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "  skip",
+   "",
+   "  -- note",
+   "  trivial",
+   "def y := 1"
+  ]
+ },
+ {
+  "name": "spaced entry",
+  "lines": [
+   "-- cite book \"Exercise 1A.4\" step 2 3",
+   "def z := 1"
+  ]
+ },
+ {
+  "name": "no space",
+  "lines": [
+   "--cite book \"1\" step 1",
+   "def z := 1"
+  ]
+ }
+]

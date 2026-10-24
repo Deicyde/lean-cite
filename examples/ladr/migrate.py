@@ -10,7 +10,8 @@ its proof-step data. Each attribution of a declaration to an item of the chapter
 * a mathlib declaration the companion adopts gets `attribute [cite ladr4e "<item>"] <name>`.
 
 Each proof step's Lean lines get a `-- cite ladr4e "<item>" step <k> <relation>` marker, placed
-so that `Cite.scan` (ported below) marks those lines; where it cannot, the loss is reported.
+so that `Cite.scan` (ported in cite_scan.py) marks those lines; where it cannot, the loss is
+reported.
 
 The tagged files are always rebuilt from the untagged ones, so the script can be rerun. It writes
 `migration-report.json` and the book side of the chapter's proof steps, `book-steps.json`: what
@@ -28,6 +29,8 @@ import re
 import sys
 from pathlib import Path
 
+from cite_scan import scan
+
 SOURCE = "ladr4e"
 SOURCES_MODULE = "LinearAlgebraDoneRightLean.Sources"
 SOURCES_FILE = '''import Cite
@@ -43,75 +46,14 @@ Axler numbers them, and to exercises as {lit}`"Exercise 3B.4"`.
 cite_source ladr4e "Linear Algebra Done Right, 4th edition"
   (type := "pdf") (uri := "https://linear.axler.net/LADR4e.pdf")
 '''
-RELATIONS = {"exactMatch", "closeMatch", "broadMatch", "narrowMatch", "relatedMatch", "hasPart", "noMatch"}
-
-
-# --- the step scanner, as Cite.Steps.scan does it ------------------------------------------
-
-def classify(text: str):
-    body = text.lstrip(" ")
-    if not body:
-        return ("blank",)
-    if not body.startswith("--"):
-        return ("code",)
-    words = re.findall(r'"[^"]*"|\S+', body[2:])
-    if not words or words[0] != "cite":
-        return ("comment",)
-    if len(words) == 2 and words[1] == "end":
-        return ("stop",)
-    if len(words) < 3 or not words[2].startswith('"'):
-        return ("comment",)
-    if words[3:4] != ["step"]:
-        return ("malformed", "expected `step`")
-    nums = []
-    for w in words[4:]:
-        if not w.isdigit():
-            break
-        nums.append(int(w))
-    rest = words[4 + len(nums):]
-    if not nums or len(rest) > 1 or (rest and rest[0] not in RELATIONS):
-        return ("malformed", "bad steps or relation")
-    return ("marker", {"column": len(text) - len(body), "source": words[1], "id": words[2][1:-1],
-                       "steps": nums, "rel": rest[0] if rest else ""})
-
-
-def scan(lines: list[str]) -> list[dict]:
-    """[{marker, line, start, stop}], lines from 1, as `Cite.scan`."""
-    kinds = [classify(t) for t in lines]
-    n = len(kinds)
-    code = lambda k: kinds[k][0] == "code"
-    boundary = lambda k: kinds[k][0] in ("marker", "stop", "malformed")
-    indent = lambda k: len(lines[k]) - len(lines[k].lstrip(" "))
-    marks, i = [], 0
-    while i < n:
-        if kinds[i][0] != "marker":
-            i += 1
-            continue
-        group, j = [], i
-        while j < n and kinds[j][0] == "marker":
-            group.append((j, kinds[j][1]))
-            j += 1
-        s = j
-        while s < n and not code(s) and not boundary(s):
-            s += 1
-        if s < n and code(s):
-            for line, m in group:
-                lim = max(m["column"], 1)
-                k = s + 1
-                while k < n and not boundary(k) and not (code(k) and indent(k) < lim):
-                    k += 1
-                e = k - 1
-                while e > s and not code(e):
-                    e -= 1
-                marks.append({**m, "line": line + 1, "start": s + 1, "stop": e + 1})
-        i = j
-    return marks
-
-
 # --- tags ----------------------------------------------------------------------------------
 
 def quote(s: str) -> str:
-    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    # neither a citation's entry in Lean nor a marker's can hold a quote; Lean's string escapes
+    # are not read by the scanner
+    if '"' in s or "\\" in s:
+        sys.exit(f"the entry {s!r} holds a quote or a backslash")
+    return f'"{s}"'
 
 
 def cite_args(item: str, rel: str = "", role: str = "", part: str = "") -> str:
@@ -259,7 +201,7 @@ def main() -> int:
         for _ in range(3):
             out, origin = render()
             got = collections.defaultdict(set)
-            for m in scan(out):
+            for m in scan(out)["marks"]:
                 a = next(o for o in origin[m["start"] - 1:] if o is not None)
                 b = next(o for o in reversed(origin[:m["stop"]]) if o is not None)
                 for k in m["steps"]:

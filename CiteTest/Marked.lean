@@ -18,3 +18,20 @@ example (n : Nat) : n = n := by
   rfl
 
 end Marked
+
+namespace Holders
+
+-- cite book "3.1" step 1
+structure S where
+  x : Nat := 1
+
+-- cite book "3.2" step 1
+inductive Color where
+  | red
+  | green
+
+private theorem priv : True := by
+  -- cite book "3.3" step 1
+  trivial
+
+end Holders

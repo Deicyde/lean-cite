@@ -13,15 +13,18 @@ public meta import Lean.Meta.Instances
 * `citations`: every citation, with the module and line range of what it cites;
 * `steps`: the `-- cite … step` markers in the source files of the imported modules named
   `Rootᵢ` or `Rootᵢ.…`, with the lines each marks and the declaration that holds them;
-* `mathlib`: Mathlib's own cross-references (`@[stacks]`, `@[kerodon]`, `@[wikidata]` and the
-  rest), when Mathlib's attribute is imported.
+* `mathlib`: the cross-references of Mathlib's attributes (`@[stacks]`, `@[kerodon]`,
+  `@[wikidata]` and the rest), when Mathlib's attribute is imported, each with the module of the
+  declaration it tags, which may be the project's own.
 
 This package depends on Lean alone, so it reads Mathlib's `tagExt` through Mathlib's own API: it
 elaborates and evaluates a term that names it. That term exists for the two layouts Mathlib has
 had, `Mathlib.Tactic.StacksAttribute` (`Mathlib.StacksTag.tagExt`, Stacks and Kerodon) and, from
 May 2026, `Mathlib.Tactic.CrossRefAttribute` (`Mathlib.CrossRef.tagExt`, every database).
 
-Run it from a file that imports what it should see, with `lake env lean export.lean`.
+A file of the module system sees another module's theorems as axioms and its private declarations
+not at all. Run the export with `lake env lean export.lean` from a file that imports what it should
+see and does not start with `module`.
 -/
 
 public meta section
@@ -30,16 +33,17 @@ open Lean Elab Command
 
 namespace Cite
 
-/-- The kind of a declaration, as its keyword would say. -/
+/-- The kind of a declaration, from its constant: `instance` for an instance, Prop-valued ones
+included; `def` for a `partial def`; `abbrev` for any reducible definition. -/
 def declKind (env : Environment) (n : Name) : String :=
+  if Meta.isInstanceCore env n then "instance" else
   match env.find? n with
   | some (.thmInfo _) => "theorem"
   | some (.defnInfo _) =>
-    if Meta.isInstanceCore env n then "instance"
-    else if getReducibilityStatusCore env n == .reducible then "abbrev" else "def"
+    if getReducibilityStatusCore env n == .reducible then "abbrev" else "def"
+  | some (.opaqueInfo _) => if env.contains (n ++ `_unsafe_rec) then "def" else "opaque"
   | some (.inductInfo _) =>
     if isClass env n then "class" else if isStructure env n then "structure" else "inductive"
-  | some (.opaqueInfo _) => "opaque"
   | some (.axiomInfo _) => "axiom"
   | some (.ctorInfo _) => "constructor"
   | some (.recInfo _) => "recursor"
@@ -83,13 +87,16 @@ def sourceJson (s : Source) : Json :=
     ("module", toJson s.module.toString),
     ("fields", Json.mkObj (s.fields.toList.map fun (k, v) => (k, toJson v)))]
 
-/-- The declarations of module `mod` that have declaration ranges, with those ranges. -/
+/-- The declarations of module `mod` that have declaration ranges, with those ranges. Recursors and
+the other constructions Lean adds to an inductive type share its range, so they are left out. -/
 def moduleDecls (env : Environment) (mod : Name) : CoreM (Array (Name × Nat × Nat)) := do
   let some idx := env.getModuleIdx? mod | return #[]
   let some data := env.header.moduleData[idx.toNat]? | return #[]
   let mut out := #[]
   for n in data.constNames do
-    if n.isInternal then continue
+    if ((privateToUserName? n).getD n).isInternal || isAuxRecursor env n || isNoConfusion env n ||
+        (env.find? n matches some (.recInfo _)) then
+      continue
     if let some r ← findDeclarationRanges? n then
       out := out.push (n, r.range.pos.line, r.range.endPos.line)
   return out
@@ -98,7 +105,7 @@ def moduleDecls (env : Environment) (mod : Name) : CoreM (Array (Name × Nat × 
 def stepsOf (mod : Name) (cs : Array Citation) : CommandElabM (Array Json) := do
   -- `lake env` sets LEAN_SRC_PATH; `lake build` does not, and then the file is looked for from
   -- the working directory, the package's root
-  let relPath : System.FilePath := (mod.components.foldl (init := ("." : System.FilePath)) (· / ·.toString)).addExtension "lean"
+  let relPath := modToFilePath "." mod "lean"
   let path ← match ← (← getSrcSearchPath).findWithExt "lean" mod with
     | some path => pure path
     | none =>
@@ -106,9 +113,8 @@ def stepsOf (mod : Name) (cs : Array Citation) : CommandElabM (Array Json) := do
         logWarning m!"no source file for module `{mod}` in LEAN_SRC_PATH or at {relPath}"
         return #[]
       pure relPath
-  let lines := splitLines (← IO.FS.readFile path)
-  let (marks, problems) := scan lines
-  for (line, msg) in problems do
+  let r := scan (splitLines (← IO.FS.readFile path))
+  for (line, msg) in r.problems do
     logWarning m!"{path}:{line}: {msg}"
   let decls ← liftCoreM <| moduleDecls (← getEnv) mod
   -- the commands a `cite … in` wraps in this module, which have no declaration of their own
@@ -116,10 +122,11 @@ def stepsOf (mod : Name) (cs : Array Citation) : CommandElabM (Array Json) := do
     | .lines m line stop kw => if m == mod then some (line, stop, kw) else none
     | _ => none
   let mut out := #[]
-  for mk in marks do
+  for mk in r.marks do
     let m := mk.marker
-    if (findSource? (← getEnv) m.source).isNone then
-      logWarning m!"{path}:{m.line}: unknown source `{m.source}`"
+    if let .error msg := findSource (← getEnv) m.source then
+      logWarning m!"{path}:{m.line}: {msg}; the marker is left out"
+      continue
     -- the innermost declaration whose lines hold the marked ones
     let holders := decls.filter fun (_, a, b) => a ≤ mk.start && mk.stop ≤ b
     let holder := holders.foldl (init := none) fun best d => match best with
@@ -175,6 +182,12 @@ opaque readMathlib : CommandElabM (Option (Name × Array MathlibRow))
 module docstring. -/
 elab (name := citeExport) "#cite_export " path:str roots:(ppSpace ident)* : command => do
   let env ← getEnv
+  -- a module sees only what its imports make public: theorems as axioms, private names not at all
+  if env.header.isModule then
+    throwError "`#cite_export` needs a file that does not start with `module`, which sees every \
+      declaration whole"
+  for s in sources env do
+    if let .error msg := findSource env s.name then throwError msg
   let cs := citations env
   let citationsJ ← liftCoreM <| cs.mapM citationJson
   let rootNames := roots.map (·.getId)

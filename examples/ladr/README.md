@@ -1,34 +1,44 @@
 # Chapter 1 of *Linear Algebra Done Right*, tagged
 
 The companion Deicyde/linear-algebra-done-right-companion links Axler's book to Rado Kirov's
-Lean companion (rkirov/linear-algebra-done-right-lean at `94a528c`). Its exporter infers which
-declaration formalizes which item from Rado's conventions, `/-! 2.6 … -/` headers and
-`exercise_2A_4a` names, plus 109 curated overrides. It takes proof steps from `proof_steps.json`.
+Lean companion (rkirov/linear-algebra-done-right-lean at `94a528c`).
+
+- Its exporter infers which declaration formalizes which item from Rado's conventions,
+  `/-! 2.6 … -/` headers and `exercise_2A_4a` names, and 103 curated attributions. Those are among
+  its 109 overrides; the other 6 are about the book.
+- It takes proof steps from `proof_steps.json`.
+
 Here chapter 1's links are written into the Lean instead, and exported back.
 
 ## What was done
 
 1. `migrate.py` wrote every link of chapter 1 into the Lean, on the local branch `cite-prototype`
    (commit `0be8137`, in the worktree `~/Desktop/LEAN/linear-algebra-done-right-lean-cite`; not
-   pushed):
-   - 134 named declarations got `@[cite …]`, merged into their attribute lists;
-   - 82 `example`s and 16 `recall`s got `cite … in`;
-   - mathlib's `Submodule` got `attribute [cite ladr4e "1.33"] Submodule`;
-   - one declaration of Section 6A got a tag, since it is linked to Exercise 1B.8;
-   - the 45 Lean ranges of the chapter's 34 proof steps got 44 markers and one `-- cite end`.
+   pushed). It reads the exporter's own inputs, the ones that produced the companion's
+   annotations.
+   - 122 named declarations got 134 `@[cite …]` tags, merged into their attribute lists. One of
+     them is in Section 6A; it is linked to Exercise 1B.8.
+   - 72 `example`s got 82 `cite … in`, and 16 `recall`s got 16.
+   - Mathlib's `Submodule` got `attribute [cite ladr4e "1.33"] Submodule`.
+   - The chapter's 34 proof steps have 45 Lean ranges, which got 44 markers and one `-- cite end`.
+     One marker states two steps.
 
-   The source is declared in a new `LinearAlgebraDoneRightLean/Sources.lean`. The tagged files
-   build, and so does the rest of the project.
-2. `#cite_export` wrote `out/dump.json` from the tagged branch: 233 citations, 44 step markers, and
-   31 Stacks tags of the Mathlib modules these files import.
+   The source is declared in a new `LinearAlgebraDoneRightLean/Sources.lean`.
+2. `#cite_export` wrote `out/dump.json` from the tagged branch: 233 citations, 44 step markers,
+   and the 31 Stacks tags of the Mathlib modules these files import.
 3. `export_from_tags.py` ran the companion's exporter with chapter 1's attributions and step
-   ranges taken only from the dump. It drops the 42 overrides about chapter 1 and ignores Rado's
-   conventions in the chapter's files. Tag lines are mapped back to the untagged files at `94a528c`,
-   the commit the annotations pin.
+   ranges taken only from the dump.
+   - It drops the 42 overrides about chapter 1 and ignores Rado's conventions in the chapter's
+     files.
+   - Rado's headers still place each record in its section's folder, which is a fact about the
+     book.
+   - Tag lines are mapped back to the untagged files at `94a528c`, the commit the annotations pin.
 4. `cite_ll.py`, the package's own exporter, wrote `out/generic/ladr4e.jsonl` and
-   `out/generic/mathlib.jsonl`. Their PDF regions come from `out/layout.json`, which
-   `layout_from_annotations.py` read from the companion's annotations. The Literature Links
-   checker reports 295 annotations and 0 problems.
+   `out/generic/mathlib.jsonl`.
+   - The PDF regions, kinds and statuses come from `out/layout.json`, which
+     `layout_from_annotations.py` read from the companion's annotations. Where an item is on the
+     page does not depend on what links it.
+   - The Literature Links checker reports 295 annotations and 0 problems.
 
 ## Results
 
@@ -52,9 +62,14 @@ The 233 records whose provenance changed are chapter 1's item and exercise links
 
 Every proof step is identical, and so is every record outside chapter 1.
 
-`compare_links.py` checks the links of step 4 against the companion's links for chapter 1. All
-264 match: 233 item links and 31 proof steps. The chapter's 4 checked absences are not tags: one
-item and 3 proof steps that no Lean carries out.
+`compare_links.py` checks the links of step 4 against the companion's links for chapter 1. A link
+is its id and relation, and each Lean end's location, role and title (an exercise's part). All 264
+match: 233 item links and 31 proof steps. The chapter's 4 checked absences are not tags: one item
+and 3 proof steps that no Lean carries out.
+
+`mutate.py` damages the dump in ten ways: it deletes, moves or changes a citation's relation, role
+or part, deletes the adopted mathlib link, and shifts, pads, drops or changes a step marker. Both
+paths catch all ten. Each either reports a difference or refuses the dump.
 
 ## What the tags carry, and what they do not
 
@@ -74,9 +89,9 @@ The book's side stays outside the Lean:
 
 `out/book-steps.json` holds the chapter's steps without their Lean side.
 
-The tags were generated from the current annotations. The comparison therefore shows that tags
-can carry everything those annotations say about the Lean, without loss. It does not check that
-any link is right. Those links were made and checked by agents, and no person has reviewed them.
+The tags were generated from the exporter's own inputs. The comparison therefore shows that tags
+can carry everything the annotations say about the Lean, without loss. It does not check that any
+link is right. Those links were made and checked by agents, and no person has reviewed them.
 
 ## Reproduce
 
@@ -98,8 +113,12 @@ python3 ../../scripts/cite_ll.py out/dump.json --project https://github.com/rkir
   --layout out/layout.json --out out/generic
 python3 compare_links.py out/generic/ladr4e.jsonl $L/linear-algebra-done-right-companion/annotations \
   $L/linear-algebra-done-right-lean-litlinks $L/linear-algebra-done-right-lean-cite 1
+python3 mutate.py $L/linear-algebra-done-right-companion $L/linear-algebra-done-right-lean-litlinks \
+  $L/linear-algebra-done-right-lean-cite <a scratch directory>
+python3 test_cite_scan.py   # after `lake build CiteTest` in the package
 ```
 
 `.lake/cite-scratch/Export.lean` in the tagged worktree imports Sections 1A, 1B, 1C and 6A and runs
 `#cite_export`. `migrate.py` rewrites the tagged files from the untagged ones, so rerunning it
-discards hand edits.
+discards hand edits. `cite_scan.py` is the step scanner in Python, which `migrate.py` uses to place
+markers. `test_cite_scan.py` checks it against the Lean scanner on the package's test corpus.
