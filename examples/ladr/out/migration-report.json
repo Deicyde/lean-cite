@@ -1,0 +1,20 @@
+{
+ "chapter": "1",
+ "files": [
+  "LinearAlgebraDoneRightLean/Section_1A.lean",
+  "LinearAlgebraDoneRightLean/Section_1B.lean",
+  "LinearAlgebraDoneRightLean/Section_1C.lean",
+  "LinearAlgebraDoneRightLean/Section_6A.lean"
+ ],
+ "counts": {
+  "files": 4,
+  "markers.cite_end": 1,
+  "markers.ranges": 45,
+  "markers.ranges_unreproduced": 0,
+  "tags.anonymous.example": 82,
+  "tags.anonymous.recall": 16,
+  "tags.mathlib": 1,
+  "tags.named": 134
+ },
+ "problems": []
+}

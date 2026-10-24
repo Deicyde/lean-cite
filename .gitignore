@@ -1,0 +1,6 @@
+.lake/
+__pycache__/
+*.pyc
+examples/ladr/out/annotations/
+examples/ladr/out/layout.json
+examples/ladr/out/export-report.json

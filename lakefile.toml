@@ -1,0 +1,10 @@
+name = "cite"
+version = "0.1.0"
+defaultTargets = ["Cite"]
+
+[[lean_lib]]
+name = "Cite"
+
+[[lean_lib]]
+name = "CiteTest"
+globs = ["CiteTest.+"]
