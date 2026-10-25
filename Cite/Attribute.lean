@@ -78,36 +78,64 @@ def elabCiteSource : CommandElab
   | _ => throwUnsupportedSyntax
 
 /-- An option of a citation: `(rel := hasPart)` gives the relation, one of the Literature Links
-relations; `(role := helper)` how the target takes part; `(part := "a")` the part of the entry. -/
-syntax citeOpt := "(" ident " := " (ident <|> str) ")"
+relations; `(role := helper)` how the target takes part; `(part := "a")` the part of the entry.
+Before a command, `(step := 2)` and `(statement := 2)` mark a step instead; see `cite … in`. -/
+syntax citeOpt := "(" ident " := " (ident <|> str <|> num) ")"
 
-/-- The citation that the arguments of `cite` describe, for `target`. -/
-def mkCitation (src : Ident) (id : StrLit) (opts : Array (TSyntax ``citeOpt))
-    (comment : Option StrLit) (target : Target) : CoreM Citation := do
-  let name := src.getId.eraseMacroScopes
-  if let .error msg := findSource (← getEnv) name then throwErrorAt src msg
-  if id.getString.all Char.isWhitespace then throwErrorAt id "the entry of a citation cannot be empty"
-  let mut c : Citation := { source := name, id := id.getString, target,
-                            comment := (comment.map (·.getString)).getD "",
-                            module := (← getEnv).mainModule }
-  let mut seen : Array String := #[]
+/-- The options, each once: (key, value, the option's syntax). -/
+def citeOptions (opts : Array (TSyntax ``citeOpt)) : CoreM (Array (String × String × Syntax)) := do
+  let mut out := #[]
   for o in opts do
     let (key, val) ← match o with
       | `(citeOpt| ($k:ident := $v:ident)) => pure (k, v.getId.eraseMacroScopes.toString)
       | `(citeOpt| ($k:ident := $v:str)) => pure (k, v.getString)
+      | `(citeOpt| ($k:ident := $v:num)) => pure (k, toString v.getNat)
       | _ => throwUnsupportedSyntax
     let k := key.getId.eraseMacroScopes.toString
-    if seen.contains k then throwErrorAt key "the option `{k}` is given twice"
-    seen := seen.push k
+    if out.any (·.1 == k) then throwErrorAt key "the option `{k}` is given twice"
+    out := out.push (k, val, o.raw)
+  return out
+
+/-- The source named by `src`, or an error at it. -/
+def checkSource (src : Ident) : CoreM Name := do
+  let name := src.getId.eraseMacroScopes
+  if let .error msg := findSource (← getEnv) name then throwErrorAt src msg
+  return name
+
+/-- Check a relation's name. -/
+def checkRel (rel : String) (ref : Syntax) : CoreM Unit :=
+  unless rel.isEmpty || relations.contains rel do
+    throwErrorAt ref "unknown relation `{rel}`; the relations are {", ".intercalate relations}"
+
+/-- The citation that the arguments of `cite` describe, for `target`. -/
+def mkCitation (src : Ident) (id : StrLit) (opts : Array (TSyntax ``citeOpt))
+    (comment : Option StrLit) (target : Target) : CoreM Citation := do
+  let name ← checkSource src
+  if id.getString.all Char.isWhitespace then throwErrorAt id "the entry of a citation cannot be empty"
+  let mut c : Citation := { source := name, id := id.getString, target,
+                            comment := (comment.map (·.getString)).getD "",
+                            module := (← getEnv).mainModule }
+  for (k, val, o) in ← citeOptions opts do
     match k with
-    | "rel" =>
-      unless relations.contains val do
-        throwErrorAt o "unknown relation `{val}`; the relations are {", ".intercalate relations}"
-      c := { c with rel := val }
+    | "rel" => checkRel val o; c := { c with rel := val }
     | "role" => c := { c with role := val }
     | "part" => c := { c with part := val }
-    | k => throwErrorAt key "unknown option `{k}` of `cite`; the options are `rel`, `role` and `part`"
+    | "step" | "statement" =>
+      throwErrorAt o "a step needs the lines it marks; write `cite … ({k} := …) in` before the \
+        command, or wrap tactics or a term in `cite … step … =>` or `cite … step … in`"
+    | k => throwErrorAt o "unknown option `{k}` of `cite`; the options are `rel`, `role` and `part`"
   return c
+
+/-- The step tag that `src`, `id`, step numbers and a relation describe, for lines `start`–`stop`
+of the current module. -/
+def mkStepTag (src : Ident) (id : StrLit) (steps : Array Nat) (rel : String) (relRef : Syntax)
+    (start stop : Nat) (form : String) : CoreM StepTag := do
+  let name ← checkSource src
+  if id.getString.all Char.isWhitespace then throwErrorAt id "the entry of a step cannot be empty"
+  if steps.any (· == 0) then throwErrorAt id "steps are numbered from 1"
+  checkRel rel relRef
+  return { source := name, id := id.getString, steps, rel, module := (← getEnv).mainModule,
+           start, stop, form }
 
 /-- `@[cite src "id"]` records that the declaration formalizes the entry `id` of the source `src`,
 declared with `cite_source`. Options follow the entry, then an optional comment:
@@ -139,6 +167,10 @@ initialize registerBuiltinAttribute {
 `example` or a `recall`; a named declaration takes `@[cite src "id"]`. The options and comment are
 those of `@[cite]`, and several `cite … in` may wrap the same command.
 
+With `(step := k)`, it instead records that the command, from its keyword, carries out step `k` of
+the proof of `id`; with `(statement := k)`, that its statement does, from its keyword to the end of
+its signature. A step takes `(rel := …)` and no other option.
+
 A command cannot start with a non-reserved word. This form therefore makes `cite` a keyword in
 every file that imports it, as Mathlib's attributes do `stacks` and `kerodon`; write `«cite»` for
 an identifier.
@@ -166,12 +198,49 @@ partial def keywordOf? (stx : Syntax) : Option Syntax :=
   | .node _ k args => if beforeKeyword.contains k then none else args.findSome? keywordOf?
   | _ => none
 
+/-- The step that `(step := k)` or `(statement := k)` marks on the command `inner`, whose keyword is
+`kw`. -/
+def commandStep (src : Ident) (id : StrLit) (opts : Array (String × String × Syntax))
+    (comment : Option StrLit) (inner kw : Syntax) : CoreM StepTag := do
+  let mut step := none
+  let mut rel := ("", Syntax.missing)
+  for (k, val, o) in opts do
+    match k with
+    | "step" | "statement" =>
+      if step.isSome then throwErrorAt o "a command takes one of `step` and `statement`"
+      let some n := val.toNat? | throwErrorAt o "a step is a number"
+      step := some (k, n, o)
+    | "rel" => rel := (val, o)
+    | k => throwErrorAt o "a step takes `rel` and no `{k}`"
+  if let some c := comment then throwErrorAt c "a step takes no comment"
+  let some (form, n, _) := step | throwError "no step"
+  let fm ← getFileMap
+  let some pos := kw.getPos? | throwErrorAt inner "the command has no position"
+  -- the statement runs to the end of the signature; the command, to its end
+  let last ← if form == "statement" then
+      match inner.find? fun s => s.isOfKind ``Parser.Command.declSig ||
+          s.isOfKind ``Parser.Command.optDeclSig with
+      | some sig => pure sig.getTailPos?
+      | none => throwErrorAt inner "this command has no statement"
+    else pure inner.getTailPos?
+  let some stop := last | throwErrorAt inner "the command has no position"
+  mkStepTag src id #[n] rel.1 rel.2 (fm.toPosition pos).line (fm.toPosition stop).line
+    (if form == "statement" then "statement" else "command")
+
 @[command_elab citeIn]
 def elabCiteIn : CommandElab
   | `(command| cite $src:ident $id:str $opts* $[$comment:str]? in $cmd) => do
     let inner := unwrapCommand cmd
     let some kw := keywordOf? inner | throwErrorAt cmd "the command has no keyword"
     let keyword := kw.getAtomVal
+    let parsed ← liftCoreM <| citeOptions opts
+    if parsed.any fun (k, _) => k == "step" || k == "statement" then
+      -- a bad step is reported, and the command it wraps is still elaborated
+      let t? ← try some <$> liftCoreM (commandStep src id parsed comment inner kw)
+        catch e => logException e; pure none
+      elabCommand cmd
+      if let some t := t? then addStepTag t
+      return
     if (inner.find? (·.isOfKind ``Parser.Command.declId)).isSome then
       logWarningAt src m!"`{keyword}` declares a name; `@[cite …]` on it records the name, \
         which outlives line numbers"

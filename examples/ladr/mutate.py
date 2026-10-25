@@ -3,7 +3,7 @@
 rerun both paths (export_from_tags.py with compare.py, and cite_ll.py with compare_links.py). The
 unmutated dump runs first, as a control that both paths must pass.
 
-    mutate.py <companion repo> <untagged repo> <tagged repo> <scratch dir>
+    mutate.py <companion repo> <untagged repo> <tagged repo> <scratch dir> [<dump>]
 
 A mutation is caught on a path when the path fails or reports a difference.
 """
@@ -15,7 +15,8 @@ from pathlib import Path
 
 here = Path(__file__).resolve().parent
 companion, original, tagged, scratch = map(Path, sys.argv[1:5])
-dump = json.loads((here / "out" / "dump.json").read_text(encoding="utf-8"))
+# the dump of the tagged branch: out/dump.json for comment markers, out/wrappers/dump.json for wrappers
+dump = json.loads((Path(sys.argv[5]) if len(sys.argv) > 5 else here / "out" / "dump.json").read_text(encoding="utf-8"))
 commit = subprocess.run(["git", "-C", tagged, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
 IGNORE = "extensions.org.mathlib-initiative.formal-companion.overlay.provenance.method"
 # the Mathlib of the companion at 94a528c, which holds `Submodule`
@@ -58,8 +59,9 @@ def m_shift(d):
 
 
 def m_pad(d):
-    s = d["steps"][step(d, lambda s: s["id"] == "1.14")]
-    s["lines"] = [s["marker"], s["lines"][1]]
+    # the line above a step's lines is one the tagging added: its marker, or its wrapper's header
+    s = d["steps"][step(d, lambda s: s["id"] == "1.14" and 2 in s["steps"])]
+    s["lines"] = [s["lines"][0] - 1, s["lines"][1]]
 
 
 def m_drop_step(d):

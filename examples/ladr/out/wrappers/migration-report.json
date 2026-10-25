@@ -1,0 +1,480 @@
+{
+ "chapter": "1",
+ "steps": "wrappers",
+ "files": [
+  "LinearAlgebraDoneRightLean/Section_1A.lean",
+  "LinearAlgebraDoneRightLean/Section_1B.lean",
+  "LinearAlgebraDoneRightLean/Section_1C.lean",
+  "LinearAlgebraDoneRightLean/Section_6A.lean"
+ ],
+ "counts": {
+  "files": 4,
+  "markers.cite_end": 2,
+  "markers.ranges": 45,
+  "markers.ranges_unreproduced": 0,
+  "steps.command": 21,
+  "steps.comment": 2,
+  "steps.statement": 3,
+  "steps.tactic": 16,
+  "steps.term": 3,
+  "tags.anonymous.example": 82,
+  "tags.anonymous.recall": 16,
+  "tags.mathlib": 1,
+  "tags.named": 134
+ },
+ "problems": [],
+ "step_forms": [
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1A.lean",
+   "lines": [
+    128,
+    128
+   ],
+   "item": "1.14",
+   "step": 1,
+   "form": "statement"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1A.lean",
+   "lines": [
+    129,
+    130
+   ],
+   "item": "1.14",
+   "step": 2,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    118,
+    118
+   ],
+   "item": "1.26",
+   "step": 1,
+   "form": "statement"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    119,
+    121
+   ],
+   "item": "1.26",
+   "step": 2,
+   "form": "term"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    125,
+    125
+   ],
+   "item": "1.27",
+   "step": 1,
+   "form": "statement"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    126,
+    131
+   ],
+   "item": "1.27",
+   "step": 2,
+   "form": "term"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    147,
+    149
+   ],
+   "item": "1.30",
+   "step": 1,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    151,
+    154
+   ],
+   "item": "1.30",
+   "step": 2,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    160,
+    162
+   ],
+   "item": "1.31",
+   "step": 1,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    164,
+    167
+   ],
+   "item": "1.31",
+   "step": 2,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    174,
+    178
+   ],
+   "item": "1.32",
+   "step": 1,
+   "form": "term"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1B.lean",
+   "lines": [
+    173,
+    173
+   ],
+   "item": "1.32",
+   "step": 2,
+   "form": "comment",
+   "why": "is part of a term"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    48,
+    49
+   ],
+   "item": "1.34",
+   "step": 1,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    50,
+    51
+   ],
+   "item": "1.34",
+   "step": 1,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    52,
+    53
+   ],
+   "item": "1.34",
+   "step": 1,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    69,
+    69
+   ],
+   "item": "1.34",
+   "step": 2,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    71,
+    72
+   ],
+   "item": "1.34",
+   "step": 3,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    77,
+    78
+   ],
+   "item": "1.34",
+   "step": 4,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    74,
+    75
+   ],
+   "item": "1.34",
+   "step": 5,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    104,
+    108
+   ],
+   "item": "1.34",
+   "step": 5,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    84,
+    87
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    89,
+    92
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    94,
+    97
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    99,
+    102
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    110,
+    113
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    115,
+    118
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    120,
+    125
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    127,
+    132
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    134,
+    137
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    139,
+    142
+   ],
+   "item": "1.34",
+   "step": 6,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    373,
+    374
+   ],
+   "item": "1.40",
+   "step": 2,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    375,
+    376
+   ],
+   "item": "1.40",
+   "step": 2,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    380,
+    383
+   ],
+   "item": "1.40",
+   "step": 3,
+   "form": "command"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    592,
+    592
+   ],
+   "item": "1.45",
+   "step": 1,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    593,
+    593
+   ],
+   "item": "1.45",
+   "step": 2,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    596,
+    597
+   ],
+   "item": "1.45",
+   "step": 3,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    594,
+    595
+   ],
+   "item": "1.45",
+   "step": 4,
+   "form": "comment",
+   "why": "ends inside a tactic's block"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    598,
+    598
+   ],
+   "item": "1.45",
+   "step": 5,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    607,
+    613
+   ],
+   "item": "1.46",
+   "step": 1,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    604,
+    604
+   ],
+   "item": "1.46",
+   "step": 2,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    614,
+    616
+   ],
+   "item": "1.46",
+   "step": 2,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    618,
+    620
+   ],
+   "item": "1.46",
+   "step": 3,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    604,
+    604
+   ],
+   "item": "1.46",
+   "step": 4,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    621,
+    623
+   ],
+   "item": "1.46",
+   "step": 5,
+   "form": "tactic"
+  },
+  {
+   "file": "LinearAlgebraDoneRightLean/Section_1C.lean",
+   "lines": [
+    624,
+    628
+   ],
+   "item": "1.46",
+   "step": 6,
+   "form": "tactic"
+  }
+ ]
+}

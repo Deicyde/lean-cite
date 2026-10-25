@@ -71,6 +71,22 @@ structure Citation where
   module : Name := .anonymous
   deriving Inhabited, Repr, BEq
 
+/-- Lines that carry out steps of the proof of an entry, marked by syntax: a tactic block, a term,
+a whole command or a command's statement. -/
+structure StepTag where
+  source : Name
+  id : String
+  steps : Array Nat
+  /-- A relation from `relations`, or empty. -/
+  rel : String := ""
+  module : Name
+  /-- The first and last marked line, from 1. -/
+  start : Nat
+  stop : Nat
+  /-- What marks them: `tactic`, `term`, `command` or `statement`. -/
+  form : String
+  deriving Inhabited, Repr, BEq
+
 /-- Add a declaration of a source to the registry. -/
 def addSourceDecl (m : NameMap (Array Source)) (s : Source) : NameMap (Array Source) :=
   m.insert s.name (((m.find? s.name).getD #[]).push s)
@@ -91,6 +107,27 @@ initialize citeExt : SimplePersistentEnvExtension Citation (Array (Array Citatio
     addImportedFn := id
     addEntryFn := fun s _ => s
   }
+
+/-- The steps marked by syntax. A tactic or a term inside a proof records its step while the proof
+is elaborated, which may be in a task of its own; an extension in mode `.sync` keeps what every
+such task adds, and Lean saves all of it. A tactic that runs twice, under `all_goals` say, records
+twice; readers drop the repeats. -/
+initialize stepExt : SimplePersistentEnvExtension StepTag (Array (Array StepTag)) ←
+  registerSimplePersistentEnvExtension {
+    addImportedFn := id
+    addEntryFn := fun s _ => s
+    asyncMode := .sync
+  }
+
+/-- Every step marked by syntax, those of imported modules first, repeats left out. -/
+def stepTags (env : Environment) : Array StepTag :=
+  let s := PersistentEnvExtension.getState stepExt env
+  (s.2.flatten ++ s.1.reverse.toArray).foldl (init := #[]) fun acc t =>
+    if acc.contains t then acc else acc.push t
+
+/-- Record a step marked by syntax, in the current module. -/
+def addStepTag {m : Type → Type} [MonadEnv m] (t : StepTag) : m Unit :=
+  modifyEnv (stepExt.addEntry · t)
 
 /-- The declarations of the source named `name`: none, one, or more when modules clash. -/
 def sourceDecls (env : Environment) (name : Name) : Array Source :=

@@ -46,11 +46,12 @@ The lexer follows nested block comments and docstrings, line comments, strings w
 interpolated string's braces, raw strings, character literals and `«…»` names. A block-comment
 closer that closes nothing shows that it has lost its place, and the scan reports it.
 
-A tactic cannot mark a declaration's statement or a term-mode `calc`, and Lean runs linters under
-`withoutModifyingEnv` or in a separate task, so a linter cannot record what it reads. Markers are
-therefore comments, which `#cite_export` reads from the source. The linter `linter.cite.steps`
-checks each command's markers while it compiles: that they parse, mark code, cite a declared
-source, and mark lines inside the command.
+Comment markers change no line of the proof, and fit where the wrappers of `Cite/StepSyntax.lean`
+cannot: in an `example`'s proof, which Lean discards with what a wrapper records, and on lines that
+cross another step's. Lean runs linters under `withoutModifyingEnv` or in a separate task, so a
+linter cannot record what it reads; `#cite_export` reads the markers from the source. The linter
+`linter.cite.steps` checks each command's markers while it compiles: that they parse, mark code,
+cite a declared source, and mark lines inside the command.
 -/
 
 public meta section

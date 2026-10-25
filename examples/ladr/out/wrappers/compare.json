@@ -1,0 +1,17 @@
+{
+ "files": 3675,
+ "identical": 3442,
+ "only ignored fields differ": 233,
+ "other differences": 0,
+ "only in expected": 0,
+ "only in actual": 0,
+ "ignored": {
+  "extensions.org.mathlib-initiative.formal-companion.overlay.provenance.method: convention -> tag": 191,
+  "extensions.org.mathlib-initiative.formal-companion.overlay.provenance.method: curation -> tag": 19,
+  "extensions.org.mathlib-initiative.formal-companion.overlay.provenance.method: audit -> tag": 22,
+  "extensions.org.mathlib-initiative.formal-companion.overlay.provenance.method: audit -> curation": 1
+ },
+ "differing": {},
+ "only_expected": [],
+ "only_actual": []
+}

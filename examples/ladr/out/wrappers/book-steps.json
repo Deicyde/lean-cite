@@ -1,0 +1,361 @@
+{
+ "about": "The book side of the chapter's proof steps: each step's lines in the proof (`book`, as export_annotations.find_proofs reads them), first words, title and note, and the relation of a step that no Lean carries out. The Lean side, which lines carry out a step and how, is in the `-- cite … step` markers.",
+ "proofs": [
+  {
+   "item": "1.14",
+   "steps": [
+    {
+     "book": [
+      1,
+      1
+     ],
+     "starts": "Proof Suppose 𝑥",
+     "title": "x = (x₁, …, xₙ) and y = (y₁, …, yₙ) in 𝐅ⁿ",
+     "note": "Binders `x y : Fin n → F`; the coordinates xₖ, yₖ are `x i`, `y i`."
+    },
+    {
+     "book": [
+      2,
+      9
+     ],
+     "starts": "𝑥 + 𝑦",
+     "title": "x + y = (x₁ + y₁, …) = (y₁ + x₁, …) = y + x",
+     "note": "`funext i` passes to coordinates. `(x + y) i` is `x i + y i` by definition (2nd, 4th equalities), so `add_comm (x i) (y i)`, the 3rd, closes the goal."
+    }
+   ]
+  },
+  {
+   "item": "1.26",
+   "steps": [
+    {
+     "book": [
+      1,
+      1
+     ],
+     "starts": "Proof Suppose 0 and",
+     "title": "Two additive identities 0 and 0′ of V",
+     "note": "Only 0′ is arbitrary: `z` with `h : ∀ v, v + z = v`. The other identity is mathlib's fixed `0`, whose law `add_zero` comes with the `AddCommGroup` instance."
+    },
+    {
+     "book": [
+      2,
+      6
+     ],
+     "starts": "Then",
+     "title": "0′ = 0′ + 0 = 0 + 0′ = 0, so the identity is unique",
+     "note": "`add_zero`, `add_comm` and `h 0` justify the three equalities, as in the book. The calc proves the goal `z = 0` for every `z` satisfying `h`, which is the uniqueness."
+    }
+   ]
+  },
+  {
+   "item": "1.27",
+   "steps": [
+    {
+     "book": [
+      1,
+      2
+     ],
+     "starts": "Proof Suppose 𝑉 is",
+     "title": "Two additive inverses w and w′ of v",
+     "note": "Only w is arbitrary: `w` with `h : v + w = 0`. The other inverse, w′, is mathlib's `-v`, whose law v + (−v) = 0 is `add_neg_cancel`."
+    },
+    {
+     "book": [
+      3,
+      4
+     ],
+     "starts": "𝑤 = 𝑤 + 0",
+     "title": "w = w + 0 = w + (v + w′) = (w + v) + w′ = 0 + w′ = w′",
+     "note": "`h` is v + w = 0, the definition's order, so line 129 turns w + v into v + w by `add_comm`, a swap the book leaves implicit. The calc proves the goal `w = -v`."
+    }
+   ]
+  },
+  {
+   "item": "1.30",
+   "steps": [
+    {
+     "book": [
+      1,
+      5
+     ],
+     "starts": "Proof For 𝑣 ∈",
+     "title": "0v = (0 + 0)v = 0v + 0v",
+     "note": "`rw [add_zero]` gives 0 = 0 + 0 in 𝐅; `add_smul` is the distributive property."
+    },
+    {
+     "book": [
+      6,
+      9
+     ],
+     "starts": "Adding the additive",
+     "title": "Add −0v to both sides: 0 = 0v",
+     "note": "`congrArg` adds −0v to both sides of `h`; the `rw` chain spells out the simplification to 0 = 0v; `h2.symm` flips it."
+    }
+   ]
+  },
+  {
+   "item": "1.31",
+   "steps": [
+    {
+     "book": [
+      1,
+      2
+     ],
+     "starts": "Proof For 𝑎 ∈",
+     "title": "a0 = a(0 + 0) = a0 + a0",
+     "note": "`rw [add_zero]` gives 0 = 0 + 0 in V; `smul_add` is the distributive property."
+    },
+    {
+     "book": [
+      3,
+      4
+     ],
+     "starts": "Adding the additive",
+     "title": "Add −a0 to both sides: 0 = a0",
+     "note": "`congrArg` adds −a0 to both sides of `h`; the `rw` chain spells out the simplification to 0 = a0; `h2.symm` flips it."
+    }
+   ]
+  },
+  {
+   "item": "1.32",
+   "steps": [
+    {
+     "book": [
+      1,
+      2
+     ],
+     "starts": "Proof For 𝑣 ∈",
+     "title": "v + (−1)v = 1v + (−1)v = (1 + (−1))v = 0v = 0",
+     "note": "`one_smul`, `add_smul`, `ring` on 1 + (−1) = 0, then `zero_smul'` (1.30)."
+    },
+    {
+     "book": [
+      3,
+      4
+     ],
+     "starts": "This equation says",
+     "title": "(−1)v is the additive inverse −v of v",
+     "note": "`unique_neg` (1.27) turns v + (−1)v = 0 into (−1)v = −v; the book's \"the additive inverse\" rests on that uniqueness."
+    }
+   ]
+  },
+  {
+   "item": "1.34",
+   "steps": [
+    {
+     "book": [
+      1,
+      3
+     ],
+     "starts": "Proof If 𝑈 is",
+     "title": "A subspace satisfies the three conditions",
+     "note": "`recall` restates mathlib's `Submodule.zero_mem`, `add_mem`, `smul_mem`. A `Submodule` has the three conditions as its fields, so no appeal to the vector-space axioms is needed."
+    },
+    {
+     "book": [
+      4,
+      6
+     ],
+     "starts": "Conversely, suppose 𝑈 satisfies the",
+     "title": "0 ∈ U gives U the additive identity of V",
+     "note": "The three conditions are the binders `h0`, `hadd`, `hsmul` on S : Set V; `subZero` is ⟨0, h0⟩, the zero of V as an element of the subtype ↥S."
+    },
+    {
+     "book": [
+      7,
+      8
+     ],
+     "starts": "𝑉 is in 𝑈. The second condition",
+     "title": "Closure under + makes addition land in U"
+    },
+    {
+     "book": [
+      9,
+      10
+     ],
+     "starts": "condition ensures that scalar",
+     "title": "Closure under scalars makes au land in U"
+    },
+    {
+     "book": [
+      11,
+      12
+     ],
+     "starts": "If 𝑢 ∈ 𝑈, then",
+     "title": "−u = (−1)u ∈ U, so U has additive inverses",
+     "note": "`hsmul (-1)` gives (−1)u ∈ S and `simpa` rewrites (−1)u to −u (1.32); `sub_neg_add_cancel` checks (−u) + u = 0 in ↥S."
+    },
+    {
+     "book": [
+      13,
+      14
+     ],
+     "starts": "The other parts of",
+     "title": "The other axioms hold in U because they hold in V",
+     "note": "One theorem per axiom on ↥S; each is `Subtype.ext` applied to the same axiom of V (`add_assoc`, `add_comm`, `one_smul`, …)."
+    },
+    {
+     "book": [
+      15,
+      15
+     ],
+     "starts": "space 𝑉. Thus 𝑈 is",
+     "title": "U is a vector space, hence a subspace of V",
+     "relation": "noMatch",
+     "note": "Lean proves the axioms one by one and never assembles them into a `Module F ↥S` or a `Submodule`; in mathlib the three conditions are the fields of `Submodule`."
+    }
+   ]
+  },
+  {
+   "item": "1.40",
+   "steps": [
+    {
+     "book": [
+      1,
+      3
+     ],
+     "starts": "Proof The reader can",
+     "title": "V₁ + ⋯ + Vₘ is a subspace, by 1.34",
+     "relation": "noMatch",
+     "note": "The sum is `U ⊔ W : Submodule F V`, a subspace by its type; the comment at lines 368–369 says so."
+    },
+    {
+     "book": [
+      4,
+      7
+     ],
+     "starts": "The subspaces 𝑉₁, … , 𝑉ₘ are all",
+     "title": "Each Vₖ ⊆ V₁ + ⋯ + Vₘ: the other summands are 0",
+     "note": "Two summands U, W only. u = u + 0 and w = 0 + w are the witnesses for `Submodule.mem_sup`, giving U ≤ U ⊔ W and W ≤ U ⊔ W."
+    },
+    {
+     "book": [
+      8,
+      10
+     ],
+     "starts": "subspace of 𝑉 containing",
+     "title": "A subspace containing every Vₖ contains the sum",
+     "note": "Two summands U, W only. `mem_sup` writes x = y + z with y ∈ U, z ∈ W; `h₁`, `h₂` put y, z in X and `X.add_mem` puts y + z in X."
+    },
+    {
+     "book": [
+      11,
+      12
+     ],
+     "starts": "ments). Thus 𝑉₁ + ⋯",
+     "title": "V₁ + ⋯ + Vₘ is the smallest such subspace",
+     "relation": "noMatch",
+     "note": "Lean leaves the two halves as separate examples; that U ⊔ W is the least upper bound of U and W is what `⊔` means in mathlib's lattice of submodules."
+    }
+   ]
+  },
+  {
+   "item": "1.45",
+   "steps": [
+    {
+     "book": [
+      1,
+      3
+     ],
+     "starts": "Proof First suppose",
+     "title": "Direct sum ⇒ 0 = v₁ + ⋯ + vₘ only with all vₖ = 0",
+     "note": "`h u 0` applies the definition to u and the zero family; `simpa` reads ∑ 0 as 0. The converse u = 0 → ∑ uᵢ = 0, which Lean's `↔` adds, is `simp`."
+    },
+    {
+     "book": [
+      4,
+      10
+     ],
+     "starts": "Now suppose that the",
+     "title": "Two representations v = v₁ + ⋯ + vₘ = u₁ + ⋯ + uₘ",
+     "note": "`IsDirectSum` says two families with equal sums are equal, so `intro h u v huv` takes the hypothesis and both representations at once. Lean's u, v are the book's v, u."
+    },
+    {
+     "book": [
+      11,
+      12
+     ],
+     "starts": "where 𝑢₁ ∈ 𝑉₁, … , 𝑢ₘ ∈ 𝑉ₘ. Subtracting",
+     "title": "Subtracting: 0 = (v₁ − u₁) + ⋯ + (vₘ − uₘ)",
+     "note": "`Finset.sum_sub_distrib` splits ∑ (u − v)ᵢ into ∑ uᵢ − ∑ vᵢ; `huv` and `sub_self` make it 0."
+    },
+    {
+     "book": [
+      13,
+      13
+     ],
+     "starts": "Because 𝑣₁ − 𝑢₁ ∈",
+     "title": "vₖ − uₖ ∈ Vₖ, so the hypothesis makes each 0",
+     "note": "vₖ − uₖ ∈ Vₖ is built in: `u - v` is a family of subspace elements, so `(h _).mp` applies to it directly."
+    },
+    {
+     "book": [
+      14,
+      14
+     ],
+     "starts": "𝑣ₖ − 𝑢ₖ equals 0.",
+     "title": "Hence v₁ = u₁, …, vₘ = uₘ",
+     "note": "`sub_eq_zero` turns u − v = 0 into u = v for the whole family."
+    }
+   ]
+  },
+  {
+   "item": "1.46",
+   "steps": [
+    {
+     "book": [
+      1,
+      1
+     ],
+     "starts": "Proof First suppose that",
+     "title": "v ∈ U ∩ W gives 0 = v + (−v)",
+     "note": "Lean packs v ∈ U and −v ∈ W (`W.neg_mem`) into a family u over Fin 2; `hsum` is ∑ uᵢ = 0, proved by `simp` with `Fin.sum_univ_two` from v + (−v) = 0."
+    },
+    {
+     "book": [
+      2,
+      4
+     ],
+     "starts": "where 𝑣 ∈ 𝑈 and",
+     "title": "Unique representation of 0 gives v = 0, so U ∩ W = {0}",
+     "note": "Line 604 puts `h` in 1.45's form and turns U ⊓ W = ⊥ into ∀ v ∈ U ⊓ W, v = 0. `(h u).mp` gives u = 0; reading off u 0 gives v = 0."
+    },
+    {
+     "book": [
+      5,
+      7
+     ],
+     "starts": "To prove the other",
+     "title": "Suppose U ∩ W = {0} and 0 = u + w",
+     "note": "`hint` is U ⊓ W = ⊥ as ∀ v ∈ U ⊓ W, v = 0. The family u has u 0 ∈ U, u 1 ∈ W; `Fin.sum_univ_two` makes `hsum` read u 0 + u 1 = 0."
+    },
+    {
+     "book": [
+      8,
+      8
+     ],
+     "starts": "To complete the proof,",
+     "title": "By 1.45 it suffices to show u = w = 0",
+     "note": "`rw [isDirectSum_iff]` applies 1.45 once, before the split into the two directions."
+    },
+    {
+     "book": [
+      9,
+      9
+     ],
+     "starts": "equation above implies that",
+     "title": "u = −w ∈ W, so u ∈ U ∩ W and u = 0"
+    },
+    {
+     "book": [
+      10,
+      10
+     ],
+     "starts": "which by the equation",
+     "title": "w = 0 by the equation, completing the proof",
+     "note": "`h1Z` gets w = 0 from u = −w and u = 0; `funext`, `fin_cases` and `Subtype.ext` assemble the family u = 0."
+    }
+   ]
+  }
+ ]
+}

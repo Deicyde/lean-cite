@@ -77,6 +77,33 @@ all ten mutations: each either reports a difference or refuses the dump.
 
 The whole tagged project builds (3,061 jobs).
 
+## Steps marked by wrappers
+
+`migrate.py --steps wrappers` marks each step's lines with a wrapper where the syntax allows, and
+with a comment marker elsewhere. It wrote the local branch `cite-prototype-wrappers` (from
+`cite-prototype`, commit `d2d0b54`, in the worktree `~/Desktop/LEAN/linear-algebra-done-right-lean-cite-wrappers`;
+not pushed). Its outputs are in `out/wrappers/`.
+
+| Form | Ranges |
+|---|---|
+| a whole command, `cite … (step := k) in` | 21 |
+| a statement, `cite … (statement := k) in` | 3 |
+| a block of tactics, `cite … step k =>` | 16 |
+| a term, `cite … step k in` | 3 |
+| a comment marker | 2 |
+
+The two comments mark lines that no wrapper holds exactly:
+
+- In 1.32, step 2 is the function at the head of a term whose argument is step 1.
+- In 1.45, step 4 is a `have` and the first line of its proof, whose other lines are step 3.
+
+`out/wrappers/migration-report.json` gives each range's form, and why a comment marks it.
+
+Both comparisons give the same results as with comment markers: 3,442 files identical and 233
+differing only in `provenance.method`, and 264 of 264 links matching. `mutate.py` catches all ten
+mutations against a clean control. In the chapter's four files, the comment markers add 45 lines.
+The wrappers add 46 and re-indent the 43 lines of the tactic blocks they wrap.
+
 ## What the tags carry, and what they do not
 
 The tags carry:
@@ -123,6 +150,10 @@ python3 mutate.py $L/linear-algebra-done-right-companion $L/linear-algebra-done-
   $L/linear-algebra-done-right-lean-cite <a scratch directory>
 python3 test_cite_scan.py   # after `lake build CiteTest` in the package
 ```
+
+For wrappers, run `migrate.py` with `--steps wrappers --tagged $L/linear-algebra-done-right-lean-cite-wrappers
+--out out/wrappers`, then the same steps on `out/wrappers/` and that worktree; give `mutate.py`
+the dump `out/wrappers/dump.json` as its last argument.
 
 `.lake/cite-scratch/Export.lean` in the tagged worktree imports Sections 1A, 1B, 1C and 6A and runs
 `#cite_export`. `migrate.py` rewrites the tagged files from the untagged ones, so rerunning it

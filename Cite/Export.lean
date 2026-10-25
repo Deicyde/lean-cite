@@ -11,8 +11,9 @@ public meta import Lean.Meta.Instances
 
 * `sources`: every declared source;
 * `citations`: every citation, with the module and line range of what it cites;
-* `steps`: the `-- cite … step` markers in the source files of the imported modules named
-  `Rootᵢ` or `Rootᵢ.…`, with the lines each marks and the declaration that holds them;
+* `steps`: the steps marked in the imported modules named `Rootᵢ` or `Rootᵢ.…`, by
+  `-- cite … step` markers in their source files (`form` `comment`) or by wrappers (`tactic`,
+  `term`, `command` or `statement`), with the lines each marks and the declaration that holds them;
 * `mathlib`: the cross-references of Mathlib's attributes (`@[stacks]`, `@[kerodon]`,
   `@[wikidata]` and the rest), when Mathlib's attribute is imported, each with the module of the
   declaration it tags, which may be the project's own.
@@ -104,44 +105,53 @@ def moduleDecls (env : Environment) (mod : Name) : CoreM (Array (Name × Nat × 
       out := out.push (n, r.range.pos.line, r.range.endPos.line)
   return out
 
-/-- The `-- cite … step` markers of module `mod`, read from its source file. -/
-def stepsOf (mod : Name) (cs : Array Citation) : CommandElabM (Array Json) := do
+/-- The steps marked in module `mod`: its `-- cite … step` markers, read from its source file, and
+its wrappers, from `tags`. Each holds `form`, `comment` for a marker, and is resolved to the
+innermost declaration whose lines hold its own. -/
+def stepsOf (mod : Name) (cs : Array Citation) (tags : Array StepTag) : CommandElabM (Array Json) := do
   -- `lake env` sets LEAN_SRC_PATH; `lake build` does not, and then the file is looked for from
   -- the working directory, the package's root
   let relPath := modToFilePath "." mod "lean"
-  let path ← match ← (← getSrcSearchPath).findWithExt "lean" mod with
-    | some path => pure path
-    | none =>
-      unless ← relPath.pathExists do
-        logWarning m!"no source file for module `{mod}` in LEAN_SRC_PATH or at {relPath}"
-        return #[]
-      pure relPath
-  let r := scan (splitLines (← IO.FS.readFile path))
-  for (line, msg) in r.problems do
-    logWarning m!"{path}:{line}: {msg}"
+  let path? ← match ← (← getSrcSearchPath).findWithExt "lean" mod with
+    | some path => pure (some path)
+    | none => pure (if ← relPath.pathExists then some relPath else none)
+  let mut found : Array (Name × String × Array Nat × String × Nat × Nat × String × Option Nat) := #[]
+  if let some path := path? then
+    let r := scan (splitLines (← IO.FS.readFile path))
+    for (line, msg) in r.problems do
+      logWarning m!"{path}:{line}: {msg}"
+    for mk in r.marks do
+      let m := mk.marker
+      if let .error msg := findSource (← getEnv) m.source then
+        if (sourceDecls (← getEnv) m.source).size > 1 then throwError m!"{path}:{m.line}: {msg}"
+        logWarning m!"{path}:{m.line}: {msg}; the marker is left out"
+        continue
+      found := found.push (m.source, m.id, m.steps, m.rel, mk.start, mk.stop, "comment", some m.line)
+  else
+    logWarning m!"no source file for module `{mod}` in LEAN_SRC_PATH or at {relPath}; \
+      its comment markers are left out"
+  for t in tags do
+    if t.module == mod then
+      found := found.push (t.source, t.id, t.steps, t.rel, t.start, t.stop, t.form, none)
   let decls ← liftCoreM <| moduleDecls (← getEnv) mod
   -- the commands a `cite … in` wraps in this module, which have no declaration of their own
   let anonymous := cs.filterMap fun c => match c.target with
     | .lines m line stop kw => if m == mod then some (line, stop, kw) else none
     | _ => none
   let mut out := #[]
-  for mk in r.marks do
-    let m := mk.marker
-    if let .error msg := findSource (← getEnv) m.source then
-      if (sourceDecls (← getEnv) m.source).size > 1 then throwError m!"{path}:{m.line}: {msg}"
-      logWarning m!"{path}:{m.line}: {msg}; the marker is left out"
-      continue
+  for (source, id, steps, rel, start, stop, form, marker) in found do
     -- the innermost declaration whose lines hold the marked ones
-    let holders := decls.filter fun (_, a, b) => a ≤ mk.start && mk.stop ≤ b
+    let holders := decls.filter fun (_, a, b) => a ≤ start && stop ≤ b
     let holder := holders.foldl (init := none) fun best d => match best with
       | some b => if d.2.2 - d.2.1 < b.2.2 - b.2.1 then some d else best
       | none => some d
-    let wrapped := anonymous.find? fun (a, b, _) => a ≤ mk.start && mk.stop ≤ b
+    let wrapped := anonymous.find? fun (a, b, _) => a ≤ start && stop ≤ b
     out := out.push <| Json.mkObj <|
-      [("source", toJson m.source.toString), ("id", toJson m.id),
-       ("steps", toJson m.steps)] ++ nonEmpty [("rel", m.rel)] ++
-      [("module", toJson (modName mod)), ("marker", toJson m.line),
-       ("lines", toJson [mk.start, mk.stop])] ++
+      [("source", toJson source.toString), ("id", toJson id), ("steps", toJson steps)] ++
+      nonEmpty [("rel", rel)] ++
+      [("module", toJson (modName mod)), ("form", toJson form)] ++
+      (marker.map fun l => ("marker", toJson l)).toList ++
+      [("lines", toJson [start, stop])] ++
       (holder.map fun (n, _, _) =>
         ("declaration", toJson ((privateToUserName? n).getD n).toString)).toList ++
       (wrapped.map fun (_, _, kw) => ("keyword", toJson kw)).toList
@@ -195,8 +205,9 @@ elab (name := citeExport) "#cite_export " path:str roots:(ppSpace ident)* : comm
   let rootNames := roots.map (·.getId)
   let mods := env.header.moduleNames.filter fun m => rootNames.any (·.isPrefixOf m)
   let mut steps := #[]
+  let tags := stepTags env
   for mod in mods do
-    steps := steps ++ (← stepsOf mod cs)
+    steps := steps ++ (← stepsOf mod cs tags)
   -- a source that two modules declare is an error where it is used, and a warning otherwise
   let used := (cs.map (·.source)) ++ steps.filterMap fun j => (j.getObjValAs? String "source").toOption.map (·.toName)
   let names := (sources env).foldl (init := #[]) fun ns s => if ns.contains s.name then ns else ns.push s.name
@@ -221,7 +232,7 @@ elab (name := citeExport) "#cite_export " path:str roots:(ppSpace ident)* : comm
     ("mathlibExtension", toJson ((mathlib.map (·.1.toString)).getD "")),
     ("mathlib", toJson mathlibJ)]
   IO.FS.writeFile path.getString (out.pretty ++ "\n")
-  logInfo m!"{cs.size} citations, {steps.size} step markers in {mods.size} modules, \
+  logInfo m!"{cs.size} citations, {steps.size} steps in {mods.size} modules, \
     {mathlibJ.size} Mathlib cross-references → {path.getString}"
 
 end Cite

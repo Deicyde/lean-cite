@@ -36,9 +36,11 @@ def in_chapter(item: str, chapter: str) -> bool:
 
 
 def line_map(original: list[str], tagged: list[str]) -> dict[int, int]:
-    """Tagged line -> original line, from 1, for the lines the tagging kept or edited in place."""
+    """Tagged line -> original line, from 1, for the lines the tagging kept, re-indented (inside a
+    tactic wrapper) or edited in place (an attribute list that gained tags)."""
     out = {}
-    sm = difflib.SequenceMatcher(None, original, tagged, autojunk=False)
+    sm = difflib.SequenceMatcher(None, [t.strip() for t in original], [t.strip() for t in tagged],
+                                 autojunk=False)
     for op, a0, a1, b0, b1 in sm.get_opcodes():
         if op == "equal" or (op == "replace" and a1 - a0 == b1 - b0):
             for k in range(a1 - a0):

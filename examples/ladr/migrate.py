@@ -29,7 +29,7 @@ import re
 import sys
 from pathlib import Path
 
-from cite_scan import scan
+from cite_scan import classify_lines, scan
 
 SOURCE = "ladr4e"
 SOURCES_MODULE = "LinearAlgebraDoneRightLean.Sources"
@@ -105,6 +105,57 @@ def attribute_block(lines: list[str], k: int) -> int | None:
     return None
 
 
+# --- choosing a wrapper for a step's lines ---------------------------------------------------
+
+def indent_of(t: str) -> int:
+    return len(t) - len(t.lstrip(" "))
+
+
+def code_part(t: str) -> str:
+    """The line without a trailing line comment."""
+    return re.split(r"\s--", " " + t, maxsplit=1)[0][1:].rstrip()
+
+
+def wrapper_form(lines: list[str], kinds: list[tuple], span: tuple, a: int, b: int) -> tuple[str | None, str]:
+    """How to mark lines a..b of the declaration `span` = (keyword, start, end) by syntax: (`command`,
+    `statement`, `tactic` or `term`, ""), or (None, why only a comment marker can)."""
+    keyword, s, e = span
+    code = lambda i: kinds[i - 1][0] == "code"
+    if (a, b) == (s, e):
+        return "command", ""
+    sig = next((i for i in range(s, e + 1) if code(i) and (":=" in code_part(lines[i - 1])
+                or re.search(r"\bwhere$", code_part(lines[i - 1])))), None)
+    if a == s:
+        return ("statement", "") if b == sig and b < e else (None, "starts at the statement and runs past it")
+    # Lean discards an example together with what a wrapper in its proof records
+    if keyword == "example":
+        return None, "inside an example"
+    c = indent_of(lines[a - 1])
+    if any(code(i) and indent_of(lines[i - 1]) < c for i in range(a, b + 1)):
+        return None, "runs out of its block"
+    if lines[a - 1].lstrip().startswith(("|", "_", ")", "]", "}", "<;>")):
+        return None, "starts inside a construct, such as a calc step or a match arm"
+    nxt = next((i for i in range(b + 1, e + 1) if code(i)), None)
+    nxt_indent = indent_of(lines[nxt - 1]) if nxt else -1
+    # the line that opens the block: the nearest above that is less indented, or a line of the
+    # statement, whose continuation lines are indented more than the proof
+    parent = next((i for i in range(a - 1, s - 1, -1)
+                   if code(i) and (indent_of(lines[i - 1]) < c or (sig is not None and i <= sig))), None)
+    if parent is None:
+        return None, "has no enclosing block"
+    pt = code_part(lines[parent - 1])
+    tactic_opener = pt.endswith(" by") or pt.strip() == "by" or pt.lstrip().startswith(("· ", ". ")) \
+        or pt.strip() in ("·", ".") or (pt.endswith("=>") and "fun " not in pt and "λ" not in pt)
+    if tactic_opener:
+        # a run of sibling tactics: it ends where the block ends or the next sibling starts
+        return ("tactic", "") if nxt_indent <= c else (None, "ends inside a tactic's block")
+    if pt.endswith(":=") or pt.endswith("<|"):
+        # a term: it fills the rest of its block, right after the line that takes it
+        if nxt_indent >= c or any(code(i) for i in range(parent + 1, a)):
+            return None, "is part of a term"
+        return "term", ""
+    return None, "is part of a term"
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--companion", type=Path, required=True)
@@ -112,6 +163,8 @@ def main() -> int:
     ap.add_argument("--tagged", type=Path, required=True)
     ap.add_argument("--chapter", default="1")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--steps", choices=("comments", "wrappers"), default="comments",
+                    help="mark proof steps with comment markers, or with wrappers where the syntax allows")
     args = ap.parse_args()
     sys.path.insert(0, str(args.companion / "scripts"))
     import export_annotations as ea
@@ -119,6 +172,7 @@ def main() -> int:
     files = sorted(str(p.relative_to(args.original)) for p in (args.original / "LinearAlgebraDoneRightLean").glob("*.lean"))
     lean = [ea.parse_lean(args.original, rel) for rel in files]
     _, external, _, _ = ea.apply_overrides(lean, args.companion / "scripts" / "annotation_overrides.json")
+    by_path = {lf.path: lf for lf in lean}
     chapter_files = {lf.path for lf in lean if lf.section.startswith(args.chapter) and lf.section[len(args.chapter):] in ("", "A", "B", "C", "D", "E", "F")}
 
     # (file, keyword line) -> [cite arguments]; anonymous ones are wrapped, named ones tagged
@@ -146,6 +200,7 @@ def main() -> int:
             for t in st["lean"]:
                 ranges[t["file"]].append((*t["lines"], p["item"], k, st["relation"]))
 
+    forms: list[dict] = []
     touched = sorted({f for f, _ in tags} | set(ranges) | {f"LinearAlgebraDoneRightLean/Section_{e['section']}.lean" for e in adopted})
     problems = []
     for rel in touched:
@@ -167,30 +222,86 @@ def main() -> int:
                 start = command_start(lines, k)
                 before[start] = [indent + f"cite {a} in" for a in args_list] + before[start]
 
-        # step markers: one group above each distinct start line, at the least indentation of the
-        # range's code so that no dedent inside the range ends it
-        by_start: dict[int, list[tuple]] = collections.defaultdict(list)
+        # how each step range is marked: by a wrapper where the syntax allows, else by a comment
+        kinds, _ = classify_lines(lines)
+        spans = [(d.keyword, s0, e0) for d, s0, e0 in ea.declaration_spans(args.original, by_path[rel])] \
+            if rel in by_path else []
+        commented: list[tuple] = []
+        wraps: list[dict] = []
+        groups: dict[tuple, list[int]] = collections.defaultdict(list)
         for a, b, item, k, relation in ranges.get(rel, []):
+            span = min((sp for sp in spans if sp[1] <= a and b <= sp[2]),
+                       key=lambda sp: sp[2] - sp[1], default=None)
+            form, why = (wrapper_form(lines, kinds, span, a, b) if args.steps == "wrappers" and span
+                         else (None, "comments asked for" if span else "outside any declaration"))
+            forms.append({"file": rel, "lines": [a, b], "item": item, "step": k, "form": form or "comment",
+                          **({"why": why} if why else {})})
+            if form is None:
+                commented.append((a, b, item, k, relation))
+            else:
+                groups[(a, b, form, item, relation, span[1])].append(k)
+        for (a, b, form, item, relation, start), ks in groups.items():
+            wraps.append({"a": a, "b": b, "form": form, "item": item, "ks": sorted(ks), "rel": relation,
+                          "start": start})
+        # wrappers nest: of two whose lines cross, neither holding the other, the smaller is a comment
+        kept: list[dict] = []
+        for w in sorted(wraps, key=lambda w: w["a"] - w["b"]):
+            inner = w["form"] in ("tactic", "term")
+            if inner and any(o["form"] in ("tactic", "term") and w["a"] <= o["b"] and o["a"] <= w["b"]
+                             and not (o["a"] <= w["a"] and w["b"] <= o["b"]) for o in kept):
+                commented += [(w["a"], w["b"], w["item"], k, w["rel"]) for k in w["ks"]]
+                report["steps.crossing"] += len(w["ks"])
+                for f in forms:
+                    if f["file"] == rel and f["lines"] == [w["a"], w["b"]] and f["item"] == w["item"]:
+                        f.update(form="comment", why="crosses another wrapper")
+            else:
+                kept.append(w)
+        shift = collections.Counter()
+        headers: dict[int, list[str]] = collections.defaultdict(list)
+        for w in sorted(kept, key=lambda w: (w["a"], -w["b"])):
+            report[f"steps.{w['form']}"] += len(w["ks"])
+            rel_opt = f" (rel := {w['rel']})" if w["rel"] else ""
+            if w["form"] in ("command", "statement"):
+                cmd = command_start(lines, w["start"])
+                before[cmd] = [f"cite {SOURCE} {quote(w['item'])} ({w['form'] if w['form'] == 'statement' else 'step'} "
+                               f":= {k}){rel_opt} in" for k in w["ks"]] + before[cmd]
+                continue
+            pad = " " * (indent_of(lines[w["a"] - 1]) + shift[w["a"]])
+            steps_text = " ".join(map(str, w["ks"])) + (f" {w['rel']}" if w["rel"] else "")
+            if w["form"] == "tactic":
+                headers[w["a"]].append(f"{pad}cite {SOURCE} {quote(w['item'])} step {steps_text} =>")
+                for i in range(w["a"], w["b"] + 1):
+                    shift[i] += 2
+            else:
+                headers[w["a"]].append(f"{pad}cite {SOURCE} {quote(w['item'])} step {steps_text} in")
+        report["steps.comment"] += len(commented)
+
+        # comment markers: one group above each distinct start line, at the least indentation of the
+        # range's code so that no dedent inside the range ends it
+        markers: dict[int, list[str]] = collections.defaultdict(list)
+        by_start: dict[int, list[tuple]] = collections.defaultdict(list)
+        for a, b, item, k, relation in commented:
             by_start[a].append((a, b, item, k, relation))
         for a, group in sorted(by_start.items()):
             ends = {b for _, b, *_ in group}
             if len(ends) > 1:
                 problems.append({"file": rel, "line": a, "problem": f"ranges starting on one line end on different lines {sorted(ends)}"})
             b = max(ends)
-            col = min(len(t) - len(t.lstrip(" ")) for t in lines[a - 1:b] if t.strip() and not t.lstrip().startswith("--"))
+            col = min(indent_of(lines[i - 1]) + shift[i] for i in range(a, b + 1)
+                      if lines[i - 1].strip() and not lines[i - 1].lstrip().startswith("--"))
             merged: dict[tuple, list[int]] = collections.defaultdict(list)
             for _, _, item, k, relation in group:
                 merged[(item, relation)].append(k)
             for (item, relation), ks in merged.items():
-                before[a].append(" " * col + f"-- cite {SOURCE} {quote(item)} step {' '.join(map(str, sorted(ks)))}" + (f" {relation}" if relation else ""))
+                markers[a].append(" " * col + f"-- cite {SOURCE} {quote(item)} step {' '.join(map(str, sorted(ks)))}" + (f" {relation}" if relation else ""))
 
         def render() -> tuple[list[str], list[int | None]]:
             out, origin = [], []
             for i, text in enumerate(edited, 1):
-                for extra in before.get(i, []):
+                for extra in before.get(i, []) + headers.get(i, []) + markers.get(i, []):
                     out.append(extra)
                     origin.append(None)
-                out.append(text)
+                out.append(" " * shift[i] + text if text.strip() else text)
                 origin.append(i)
                 for extra in after.get(i, []):
                     out.append(extra)
@@ -207,12 +318,12 @@ def main() -> int:
                 for k in m["steps"]:
                     got[(m["id"], k, m["rel"])].add((a, b))
             missing = []
-            for a, b, item, k, relation in ranges.get(rel, []):
+            for a, b, item, k, relation in commented:
                 if (a, b) in got[(item, k, relation)]:
                     continue
                 runs = sorted(r for r in got[(item, k, relation)] if r[0] == a)
                 if runs and runs[0][1] > b and "-- cite end" not in "".join(after.get(b, [])):
-                    after[b].append(" " * (len(lines[a - 1]) - len(lines[a - 1].lstrip(" "))) + "-- cite end")
+                    after[b].append(" " * (indent_of(lines[a - 1]) + shift[a]) + "-- cite end")
                 else:
                     missing.append((a, b, item, k, relation, sorted(got[(item, k, relation)])))
             if not missing:
@@ -249,9 +360,10 @@ def main() -> int:
                 for st in p["steps"]]} for p in steps]}
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "book-steps.json").write_text(json.dumps(book, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    summary = {"chapter": args.chapter, "files": touched, "counts": dict(sorted(report.items())), "problems": problems}
+    summary = {"chapter": args.chapter, "steps": args.steps, "files": touched,
+               "counts": dict(sorted(report.items())), "problems": problems, "step_forms": forms}
     (args.out / "migration-report.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(json.dumps({k: v for k, v in summary.items() if k != "problems"}, indent=1))
+    print(json.dumps({k: v for k, v in summary.items() if k not in ("problems", "step_forms")}, indent=1))
     print(f"{len(problems)} problems")
     for p in problems:
         print(" ", json.dumps(p, ensure_ascii=False))

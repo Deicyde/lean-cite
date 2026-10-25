@@ -29,11 +29,25 @@ example : … := …
 
 attribute [cite ladr4e "1.33"] Submodule
 
+cite ladr4e "1.26" (statement := 1) (rel := closeMatch) in
+@[cite ladr4e "1.26"]
 theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
-  -- cite ladr4e "1.26" step 2 exactMatch
+  cite ladr4e "1.26" step 2 exactMatch in
   calc z = z + 0 := (add_zero z).symm
     _ = 0 + z := add_comm z 0
     _ = 0 := h 0
+
+theorem add_comm_pi (x y : Fin n → F) : x + y = y + x := by
+  cite ladr4e "1.14" step 2 exactMatch =>
+    funext i
+    exact add_comm (x i) (y i)
+
+theorem neg_one_smul' (v : V) : (-1 : F) • v = -v :=
+  -- cite ladr4e "1.32" step 2 exactMatch
+  unique_neg v ((-1 : F) • v) <|
+  -- cite end
+    cite ladr4e "1.32" step 1 exactMatch in
+    calc …
 ```
 
 - `cite_source` declares a source. Any project declares its own, beside those of the projects it
@@ -56,7 +70,14 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
     package is imported, as `stacks` and `kerodon` are wherever Mathlib is.
   - A proof is elaborated asynchronously, so its errors come after the citation is recorded. A
     citation is therefore recorded even when its command fails, as with `@[cite]`.
-- `-- cite src "id" step k₁ k₂ … [relation]` marks the lines that carry out steps of a proof.
+- A wrapper marks the lines that carry out steps of a proof (`Cite/StepSyntax.lean`). The lines are
+  those of the syntax it wraps.
+  - `cite src "id" step k₁ k₂ … [relation] =>` and a block of tactics.
+  - `cite src "id" step k₁ k₂ … [relation] in` and a term, such as a `calc`.
+  - Before a command, `cite src "id" (step := k) in`, for the whole command from its keyword, or
+    `(statement := k)`, for its statement.
+- `-- cite src "id" step k₁ k₂ … [relation]` also marks a step's lines, as a comment
+  (`Cite/Steps.lean`).
   - A marker is a line comment alone on its line, outside block comments, docstrings and strings.
   - The range starts at the next line of code. It ends before the next marker or `-- cite end`,
     or before the first line of code indented less than the marker. A marker in the first column
@@ -65,17 +86,22 @@ theorem unique_zero (z : V) (h : ∀ v, v + z = v) : z = 0 :=
 - `#cite_tags [src]` lists the citations, imported ones included.
 - `#cite_export "out.json" Root…` writes, as JSON:
   - the sources and the citations;
-  - the step markers in the modules under each `Root`;
+  - the steps marked in the modules under each `Root`, by wrappers and by comments;
   - the cross-references of Mathlib's attributes.
 
   Run it with `lake env lean` from a file that imports what it should see and does not start
   with `module`.
 
-A tactic cannot mark a declaration's statement or a term-mode `calc`. In chapter 1 of *Linear
-Algebra Done Right*, 28 of the 45 Lean ranges of proof steps start at a statement or in term mode.
-Lean 4.30 runs linters under `withoutModifyingEnv` or in a separate task, so a linter cannot record
-what it reads either. Step markers are therefore comments, which `#cite_export` reads from the
-source, and the linter `linter.cite.steps` only checks them while a file compiles. It reports:
+A wrapper records its step while the proof around it is elaborated, often in a task of its own. An
+environment extension in mode `.sync` keeps what such tasks add, and Lean saves all of it, so the
+export reads wrappers from the environment. Lean elaborates and discards an `example`, with what a
+wrapper in its proof records; there the wrapper warns, and the step needs a comment. Wrappers nest,
+so of two steps whose lines cross, one needs a comment too. A wrapper of tactics re-indents them.
+
+Comments change no line of the proof and fit anywhere. Lean 4.30 runs linters under
+`withoutModifyingEnv` or in a separate task, so a linter cannot record what it reads;
+`#cite_export` reads comment markers from the source, and the linter `linter.cite.steps` only
+checks them while a file compiles. It reports:
 
 - markers that do not parse, and markers that mark no code;
 - sources that are not declared;
@@ -132,7 +158,8 @@ return, so in a file that has one, later lines are numbered one less here than t
 |---|---|
 | `Cite/Basic.lean` | sources, citations, the environment extensions |
 | `Cite/Attribute.lean` | `cite_source`, `@[cite]`, `cite … in`, `#cite_tags` |
-| `Cite/Steps.lean` | the step-marker scanner and its linter |
+| `Cite/StepSyntax.lean` | the wrappers that mark steps |
+| `Cite/Steps.lean` | the comment markers' scanner and its linter |
 | `Cite/Export.lean` | `#cite_export` and the reader of Mathlib's tags |
 | `CiteTest/` | tests (`lake build CiteTest`); `scan_cases.json` is the scanner's corpus |
 | `scripts/cite_ll.py` | the Literature Links exporter |
