@@ -9,9 +9,18 @@ its proof-step data. Each attribution of a declaration to an item of the chapter
 * an `example`, an unnamed `instance` or a `recall` is wrapped in `cite ladr4e "<item>" … in`;
 * a mathlib declaration the companion adopts gets `attribute [cite ladr4e "<item>"] <name>`.
 
-Each proof step's Lean lines get a `-- cite ladr4e "<item>" step <k> <relation>` marker, placed
-so that `Cite.scan` (ported in cite_scan.py) marks those lines; where it cannot, the loss is
-reported.
+Each proof step's Lean lines are marked in one of two ways:
+
+* `--steps comments` (the default): a `-- cite ladr4e "<item>" step <k> <relation>` marker, placed
+  so that `Cite.scan` (ported in cite_scan.py) marks those lines;
+* `--steps wrappers`: a wrapper where the lines are whole syntax that a wrapper on lines of its own
+  can hold (a command, its statement, a run of tactics, a term that fills its block), and a comment
+  marker elsewhere. `migration-report.json` gives each range's form, and why a comment marks it.
+  `--demote` names ranges to mark with comments regardless; wrap_chapter.py passes the ranges
+  whose wrappers Lean showed to be wrong.
+
+Comment ranges are checked here, against the scanner; a range it cannot reproduce is reported.
+Wrapper ranges are checked by wrap_chapter.py, against what Lean records.
 
 The tagged files are always rebuilt from the untagged ones, so the script can be rerun. It writes
 `migration-report.json` and the book side of the chapter's proof steps, `book-steps.json`: what
@@ -116,17 +125,39 @@ def code_part(t: str) -> str:
     return re.split(r"\s--", " " + t, maxsplit=1)[0][1:].rstrip()
 
 
+def signature_end(lines: list[str], s: int, e: int) -> int | None:
+    """The line where the statement of the declaration on lines s..e ends: its first `:=`, `where`
+    or `|` outside brackets, so that a named argument `(x := y)` does not count."""
+    depth = 0
+    for i in range(s, e + 1):
+        t = code_part(lines[i - 1])
+        for j, ch in enumerate(t):
+            if ch in "([{⟨":
+                depth += 1
+            elif ch in ")]}⟩":
+                depth -= 1
+            elif depth == 0 and (t.startswith(":=", j) or (ch == "|" and i > s)):
+                return i
+        if depth == 0 and re.search(r"\bwhere$", t):
+            return i
+    return None
+
+
 def wrapper_form(lines: list[str], kinds: list[tuple], span: tuple, a: int, b: int) -> tuple[str | None, str]:
     """How to mark lines a..b of the declaration `span` = (keyword, start, end) by syntax: (`command`,
     `statement`, `tactic` or `term`, ""), or (None, why only a comment marker can)."""
     keyword, s, e = span
     code = lambda i: kinds[i - 1][0] == "code"
+    if not code(a):
+        return None, "starts at a comment, which a wrapper's lines leave out"
     if (a, b) == (s, e):
         return "command", ""
-    sig = next((i for i in range(s, e + 1) if code(i) and (":=" in code_part(lines[i - 1])
-                or re.search(r"\bwhere$", code_part(lines[i - 1])))), None)
+    sig = signature_end(lines, s, e)
     if a == s:
-        return ("statement", "") if b == sig and b < e else (None, "starts at the statement and runs past it")
+        if b == sig and b < e:
+            return "statement", ""
+        return None, ("is part of the statement" if sig is not None and b < sig
+                      else "starts at the statement and runs past it")
     # Lean discards an example together with what a wrapper in its proof records
     if keyword == "example":
         return None, "inside an example"
@@ -145,10 +176,20 @@ def wrapper_form(lines: list[str], kinds: list[tuple], span: tuple, a: int, b: i
         return None, "has no enclosing block"
     pt = code_part(lines[parent - 1])
     tactic_opener = pt.endswith(" by") or pt.strip() == "by" or pt.lstrip().startswith(("· ", ". ")) \
-        or pt.strip() in ("·", ".") or (pt.endswith("=>") and "fun " not in pt and "λ" not in pt)
+        or pt.strip() in ("·", ".") or (pt.endswith("=>") and "fun " not in pt and "λ" not in pt
+                                        and not pt.lstrip().startswith("conv"))
     if tactic_opener:
         # a run of sibling tactics: it ends where the block ends or the next sibling starts
-        return ("tactic", "") if nxt_indent <= c else (None, "ends inside a tactic's block")
+        if nxt_indent > c:
+            return None, "ends inside a tactic's block"
+        nxt_text = lines[nxt - 1].lstrip() if nxt else ""
+        if nxt_text.startswith(("|", "<;>", ")", "]", "}")) or code_part(lines[b - 1]).endswith(" with"):
+            return None, "ends inside a construct that continues, such as `induction … with`"
+        # `classical` acts on the tactics after it in its block; a wrapper would end its scope early
+        if nxt_indent == c and any(code(i) and indent_of(lines[i - 1]) == c and
+                                   code_part(lines[i - 1]).strip() == "classical" for i in range(a, b + 1)):
+            return None, "holds a `classical` whose block goes on"
+        return "tactic", ""
     if pt.endswith(":=") or pt.endswith("<|"):
         # a term: it fills the rest of its block, right after the line that takes it
         if nxt_indent >= c or any(code(i) for i in range(parent + 1, a)):
@@ -165,6 +206,8 @@ def main() -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--steps", choices=("comments", "wrappers"), default="comments",
                     help="mark proof steps with comment markers, or with wrappers where the syntax allows")
+    ap.add_argument("--demote", type=Path,
+                    help="a JSON list of {file, lines, item, step} to mark with comments, not wrappers")
     args = ap.parse_args()
     sys.path.insert(0, str(args.companion / "scripts"))
     import export_annotations as ea
@@ -201,6 +244,8 @@ def main() -> int:
                 ranges[t["file"]].append((*t["lines"], p["item"], k, st["relation"]))
 
     forms: list[dict] = []
+    demoted = {(d["file"], *d["lines"], d["item"], d["step"])
+               for d in (json.loads(args.demote.read_text(encoding="utf-8")) if args.demote else [])}
     touched = sorted({f for f, _ in tags} | set(ranges) | {f"LinearAlgebraDoneRightLean/Section_{e['section']}.lean" for e in adopted})
     problems = []
     for rel in touched:
@@ -234,6 +279,8 @@ def main() -> int:
                        key=lambda sp: sp[2] - sp[1], default=None)
             form, why = (wrapper_form(lines, kinds, span, a, b) if args.steps == "wrappers" and span
                          else (None, "comments asked for" if span else "outside any declaration"))
+            if form and (rel, a, b, item, k) in demoted:
+                form, why = None, "demoted: as a wrapper it did not build or recorded other lines"
             forms.append({"file": rel, "lines": [a, b], "item": item, "step": k, "form": form or "comment",
                           **({"why": why} if why else {})})
             if form is None:
@@ -277,28 +324,28 @@ def main() -> int:
         report["steps.comment"] += len(commented)
 
         # comment markers: one group above each distinct start line, at the least indentation of the
-        # range's code so that no dedent inside the range ends it
-        markers: dict[int, list[str]] = collections.defaultdict(list)
+        # range's code so that no dedent inside the range ends it. A spec is [column, text, end].
+        specs: dict[int, list[list]] = collections.defaultdict(list)
         by_start: dict[int, list[tuple]] = collections.defaultdict(list)
         for a, b, item, k, relation in commented:
             by_start[a].append((a, b, item, k, relation))
         for a, group in sorted(by_start.items()):
-            ends = {b for _, b, *_ in group}
-            if len(ends) > 1:
-                problems.append({"file": rel, "line": a, "problem": f"ranges starting on one line end on different lines {sorted(ends)}"})
-            b = max(ends)
-            col = min(indent_of(lines[i - 1]) + shift[i] for i in range(a, b + 1)
+            ends = sorted({b for _, b, *_ in group})
+            col = min(indent_of(lines[i - 1]) + shift[i] for i in range(a, max(ends) + 1)
                       if lines[i - 1].strip() and not lines[i - 1].lstrip().startswith("--"))
-            merged: dict[tuple, list[int]] = collections.defaultdict(list)
-            for _, _, item, k, relation in group:
-                merged[(item, relation)].append(k)
-            for (item, relation), ks in merged.items():
-                markers[a].append(" " * col + f"-- cite {SOURCE} {quote(item)} step {' '.join(map(str, sorted(ks)))}" + (f" {relation}" if relation else ""))
+            for end in ends:
+                merged: dict[tuple, list[int]] = collections.defaultdict(list)
+                for _, b, item, k, relation in group:
+                    if b == end:
+                        merged[(item, relation)].append(k)
+                for (item, relation), ks in merged.items():
+                    specs[a].append([col, f"-- cite {SOURCE} {quote(item)} step {' '.join(map(str, sorted(ks)))}"
+                                          + (f" {relation}" if relation else ""), end])
 
         def render() -> tuple[list[str], list[int | None]]:
             out, origin = [], []
             for i, text in enumerate(edited, 1):
-                for extra in before.get(i, []) + headers.get(i, []) + markers.get(i, []):
+                for extra in before.get(i, []) + headers.get(i, []) + [" " * c + t for c, t, _ in specs.get(i, [])]:
                     out.append(extra)
                     origin.append(None)
                 out.append(" " * shift[i] + text if text.strip() else text)
@@ -308,26 +355,71 @@ def main() -> int:
                     origin.append(None)
             return out, origin
 
-        # close ranges that the scanner would run past their last line, then check every range
-        for _ in range(3):
+        def check() -> tuple[list[tuple], dict]:
+            """The comment ranges the scanner does not reproduce, and what it gives: for each
+            (item, step, relation), the set of (first, last) untagged lines, None for a line the
+            tagging added."""
             out, origin = render()
             got = collections.defaultdict(set)
             for m in scan(out)["marks"]:
-                a = next(o for o in origin[m["start"] - 1:] if o is not None)
-                b = next(o for o in reversed(origin[:m["stop"]]) if o is not None)
                 for k in m["steps"]:
-                    got[(m["id"], k, m["rel"])].add((a, b))
-            missing = []
-            for a, b, item, k, relation in commented:
-                if (a, b) in got[(item, k, relation)]:
-                    continue
-                runs = sorted(r for r in got[(item, k, relation)] if r[0] == a)
-                if runs and runs[0][1] > b and "-- cite end" not in "".join(after.get(b, [])):
-                    after[b].append(" " * (indent_of(lines[a - 1]) + shift[a]) + "-- cite end")
-                else:
-                    missing.append((a, b, item, k, relation, sorted(got[(item, k, relation)])))
+                    got[(m["id"], k, m["rel"])].add((origin[m["start"] - 1], origin[m["stop"] - 1], m["stop"]))
+            tagged_line = {o: i + 1 for i, o in enumerate(origin) if o is not None}
+            missing = [(a, b, item, k, relation) for a, b, item, k, relation in commented
+                       if not any(r[:2] == (a, b) for r in got[(item, k, relation)])]
+            return missing, {"got": got, "tagged_line": tagged_line}
+
+        # close ranges that the scanner runs past their last line; where markers share a start
+        # line, end each range by its marker's column instead, since `-- cite end` ends them all
+        for _ in range(4):
+            missing, info = check()
             if not missing:
                 break
+            for a, b, item, k, relation in missing:
+                spec = next((x for x in specs.get(a, []) if x[2] == b), None)
+                if spec is None:
+                    continue
+                # a column at which the range ends where it should, without breaking the others; the
+                # rendered lines, wrapper heads included, decide
+                before_missing = set(missing)
+                col0 = spec[0]
+                shared = any(x[2] > b for x in specs[a])
+
+                def attempt(col: int) -> str:
+                    """`exact`, `over` (runs past b, and nothing else breaks) or `no`, at column col."""
+                    spec[0] = col
+                    now, inf = check()
+                    now = set(now)
+                    if (a, b, item, k, relation) not in now and now <= before_missing:
+                        return "exact"
+                    runs = [r for r in inf["got"][(item, k, relation)] if r[0] == a]
+                    if runs and now - {(a, b, item, k, relation)} <= before_missing \
+                            and min(r[2] for r in runs) > inf["tagged_line"].get(b, 10**9):
+                        return "over"
+                    return "no"
+
+                # the marker's own column with `-- cite end` reads best; other columns come next,
+                # those to the left first, and a range sharing its start with a longer one may end
+                # only by its column
+                order = [col0] + list(range(col0 - 1, -1, -1)) + list(range(col0 + 1, 80))
+                done = False
+                if not shared and attempt(col0) == "over" and "-- cite end" not in "".join(after.get(b, [])):
+                    after[b].append(" " * (indent_of(lines[a - 1]) + shift[a]) + "-- cite end")
+                    spec[0], done = col0, True
+                for col in order if not done else []:
+                    if attempt(col) == "exact":
+                        done = True
+                        break
+                for col in order if not done and not shared else []:
+                    if attempt(col) == "over" and "-- cite end" not in "".join(after.get(b, [])):
+                        after[b].append(" " * (indent_of(lines[a - 1]) + shift[a]) + "-- cite end")
+                        done = True
+                        break
+                if not done:
+                    spec[0] = col0
+        missing, info = check()
+        missing = [(a, b, item, k, relation, sorted((r[0], r[1]) for r in info["got"][(item, k, relation)]))
+                   for a, b, item, k, relation in missing]
         for a, b, item, k, relation, have in missing:
             problems.append({"file": rel, "item": item, "step": k, "want": [a, b], "got": have})
         report["markers.ranges"] += len(ranges.get(rel, []))

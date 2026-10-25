@@ -35,7 +35,13 @@ theorem twice : True ∧ True := by
   constructor
   all_goals cite book "4.5" step 1 => trivial
 
--- in a branch of first that fails, nothing is recorded
+-- in a branch of first that fails, nothing is recorded, and the linter says so
+/--
+warning: Lean discards what an `example`, a `recall`, a `#`-command or `decreasing_by` records, runs an autoParam's tactic where the argument is left out, and skips a branch that fails; this wrapper recorded no step here, so mark the step with a comment marker (`-- cite … step …`)
+
+Note: This linter can be disabled with `set_option linter.cite.wrappers false`
+-/
+#guard_msgs in
 theorem branch : True := by
   first
   | cite book "4.6" step 1 => exact absurd rfl (by decide : (1 : Nat) ≠ 1)
@@ -43,7 +49,9 @@ theorem branch : True := by
 
 -- in an example, which keeps nothing, a wrapper warns
 /--
-warning: an `example` is discarded after elaboration, together with what this wrapper records; mark the step with a comment marker (`-- cite … step …`) instead
+warning: Lean discards what an `example`, a `recall`, a `#`-command or `decreasing_by` records, runs an autoParam's tactic where the argument is left out, and skips a branch that fails; this wrapper recorded no step here, so mark the step with a comment marker (`-- cite … step …`)
+
+Note: This linter can be disabled with `set_option linter.cite.wrappers false`
 -/
 #guard_msgs in
 cite book "4.7" in
@@ -76,5 +84,66 @@ def step : Nat := 3
 cite book "4.10" (step := 1) in
 example : True :=
   trivial
+
+-- in an example's `where` helper, and in decreasing_by
+/--
+warning: Lean discards what an `example`, a `recall`, a `#`-command or `decreasing_by` records, runs an autoParam's tactic where the argument is left out, and skips a branch that fails; this wrapper recorded no step here, so mark the step with a comment marker (`-- cite … step …`)
+
+Note: This linter can be disabled with `set_option linter.cite.wrappers false`
+-/
+#guard_msgs in
+example : True := aux
+where aux : True := cite book "4.11" step 1 in trivial
+
+/--
+warning: Lean discards what an `example`, a `recall`, a `#`-command or `decreasing_by` records, runs an autoParam's tactic where the argument is left out, and skips a branch that fails; this wrapper recorded no step here, so mark the step with a comment marker (`-- cite … step …`)
+
+Note: This linter can be disabled with `set_option linter.cite.wrappers false`
+-/
+#guard_msgs in
+def countDown (n : Nat) : Nat := if n = 0 then 0 else countDown (n - 1)
+termination_by n
+decreasing_by
+  cite book "4.12" step 1 =>
+    omega
+
+/-- error: an `example` is discarded after elaboration, together with what `@[cite]` records; write `cite … in` before the `example` instead -/
+#guard_msgs in
+example : True := aux
+where @[cite book "4.13"] aux : True := trivial
+
+-- an autoParam's wrapper records nothing, here or where the argument is left out
+/--
+warning: Lean discards what an `example`, a `recall`, a `#`-command or `decreasing_by` records, runs an autoParam's tactic where the argument is left out, and skips a branch that fails; this wrapper recorded no step here, so mark the step with a comment marker (`-- cite … step …`)
+
+Note: This linter can be disabled with `set_option linter.cite.wrappers false`
+-/
+#guard_msgs in
+theorem withAuto (n : Nat) (_h : n = n := by
+    cite book "4.14" step 1 =>
+      rfl) : True := trivial
+
+theorem usesAuto : True := withAuto 3
+
+-- the statement form on declarations with no signature
+cite book "4.15" (statement := 1) in
+structure NoSig where
+  x : Nat
+
+cite book "4.15" (statement := 2) in
+def noType := 3
+
+/-- error: a `mutual` block has several statements; mark each declaration's instead -/
+#guard_msgs in
+cite book "4.16" (statement := 1) in
+mutual
+theorem m1 : True := trivial
+end
+
+-- two wrappers of the same lines mark the same lines
+theorem sameLines : True := by
+  cite book "4.17" step 1 =>
+    cite book "4.18" step 2 =>
+      trivial
 
 end Wrapped

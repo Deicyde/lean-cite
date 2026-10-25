@@ -8,9 +8,12 @@ come only from `@[cite]` and `cite … in`, and the Lean side of the proof steps
 `-- cite … step` markers, all as `#cite_export` wrote them from the tagged branch. Everything else
 the exporter does is unchanged: the PDF regions, labels, snippets, notes and checked absences.
 
-The tagged branch adds lines, so the tags' line numbers are mapped back to the untagged files at
-the annotations' commit, and the exporter reads those files. The output is then comparable, file
-for file, with the companion's `annotations/`.
+The tagged branch adds lines and re-indents the tactics a wrapper holds, so the tags' line numbers
+are mapped back to the untagged files at the annotations' commit, and the exporter reads those
+files. The output is then comparable, file for file, with the companion's `annotations/`. A dump may
+hold other chapters' tags; only the chapter's are used. A mathlib declaration the companion adopts
+is shown as the exporter shows its own: the source of a definition or a type, the statement of
+anything else.
 
     export_from_tags.py --dump dump.json --book-steps book-steps.json --companion <repo> \
         --original <Rado's repo at 94a528c> --tagged <the tagged branch> --chapter 1 --out <dir>
@@ -93,14 +96,18 @@ def main() -> int:
             sys.exit(f"{module} {a}-{b}: the range starts or ends on a line the tagging added")
         return m[a], m[b]
 
-    cites = [c for c in dump["citations"] if c["source"] == SOURCE]
-    steps = [s for s in dump["steps"] if s["source"] == SOURCE]
+    chapter_files = {f"{PACKAGE}/Section_{args.chapter}{x}.lean" for x in "ABCDEF"} | \
+        {f"{PACKAGE}/Chapter_{args.chapter}.lean"}
+    # a branch may hold other chapters' tags: keep those of the chapter's items, and every citation
+    # in the chapter's files
+    in_files = lambda t: path_of(t.get("module", "")) in chapter_files
+    cites = [c for c in dump["citations"] if c["source"] == SOURCE
+             and (in_chapter(c["id"], args.chapter) or in_files(c["target"]))]
+    steps = [s for s in dump["steps"] if s["source"] == SOURCE and in_chapter(s["id"], args.chapter)]
 
     # Overrides that the tags replace: those about the chapter's items or in its files. The book's
     # own overrides (displayed equations, notes on absences) stay.
     overrides = json.loads((args.companion / "scripts" / "annotation_overrides.json").read_text(encoding="utf-8"))
-    chapter_files = {f"{PACKAGE}/Section_{args.chapter}{x}.lean" for x in "ABCDEF"} | \
-        {f"{PACKAGE}/Chapter_{args.chapter}.lean"}
     kept = [e for e in overrides if "equation" in e or "absence" in e or
             not (in_chapter(e["item"], args.chapter) or e.get("file") in chapter_files)]
     tmp = Path(tempfile.mkdtemp(prefix="cite-ladr-"))
@@ -159,11 +166,24 @@ def main() -> int:
                 line += 1
             while text[line - 1].lstrip().startswith("@["):
                 line += 1
-            statement, truncated = ea.statement_of(text, line, end + 1)
+            # the keyword as written, after modifiers such as `protected`
+            words = text[line - 1].split()
+            while words and words[0] in ("private", "protected", "noncomputable", "nonrec", "partial", "unsafe"):
+                words.pop(0)
+            keyword = words[0] if words else t["kind"]
+            text = text[:line - 1] + [" " * (len(text[line - 1]) - len(text[line - 1].lstrip()))
+                                      + " ".join(words) if words else text[line - 1]] + text[line:]
+            # as the exporter shows its own declarations: the source of a definition or a type,
+            # the statement of anything else
+            if keyword in ea.BODY_KINDS + ("irreducible_def",):
+                masked = ea.mask_comments("\n".join(text))[0].split("\n")
+                statement, truncated = ea.shown_of(masked, line, end + 1)
+            else:
+                statement, truncated = ea.statement_of(text, line, end + 1)
             external.append({"item": c["id"], "section": c["citedIn"].rsplit("_", 1)[-1],
                              **({"relation": c["rel"]} if c.get("rel") else {}),
                              "mathlib": {"declaration": t["declaration"], "path": rel, "line": line,
-                                         "kind": t["kind"], "statement": statement, "truncated": truncated}})
+                                         "kind": keyword, "statement": statement, "truncated": truncated}})
             report["tags.mathlib"] += 1
         return n, external, equations, absences
 

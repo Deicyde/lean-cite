@@ -1,7 +1,8 @@
 import Cite
 
 /-!
-The scanner on the cases of `scan_cases.json`. The results are also written to
+The scanner on the cases of `scan_cases.json`. Lake does not see that file, so after changing it,
+change this one (the expected output below) to have it run again. The results are also written to
 `.lake/scan_results.json`, against which `examples/ladr/test_cite_scan.py` checks the Python port.
 -/
 
@@ -175,6 +176,10 @@ primes in names: [book 1 [1]  3-3] []
 guillemets: [book 1 [1]  3-3] []
 stray closer in whole file: [book 1 [1]  3-3, book 1 [2]  6-6] [4: a block-comment closer that closes nothing; the scanner may have misread this file]
 unicode space entry: [book   [1]  2-2] []
+leading comment: [book 1 [1]  3-4, book 1 [2]  6-6] []
+blank then comment: [book 1 [1]  4-5] []
+marker before docstring: [book 1 [1]  2-3] []
+only comments then boundary: [] [2: the `-- cite` marker marks no code]
 -/
 #guard_msgs in
 #eval do IO.println (← scanCorpus)

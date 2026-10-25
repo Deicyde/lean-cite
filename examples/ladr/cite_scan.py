@@ -224,19 +224,22 @@ def scan(lines: list[str], first: int = 1, slice: bool = False) -> dict:
                 j += 1
             r["markers"] += group
             s = j
-            while s < n and not code(s) and not boundary(s):
+            while s < n and kinds[s][0] == "blank":
                 s += 1
-            if s >= n or not code(s):
+            c = s
+            while c < n and not code(c) and not boundary(c):
+                c += 1
+            if c >= n or not code(c):
                 r["problems"].append((first + i, "the `-- cite` marker marks no code"))
             else:
                 for m in group:
-                    k = s + 1
+                    k = c + 1
                     while k < n and not boundary(k) and not (
                             code(k) and (indent_of(lines[k]) == 0 if m["column"] == 0
                                          else indent_of(lines[k]) < m["column"])):
                         k += 1
                     e = k - 1
-                    while e > s and not code(e):
+                    while e > c and not code(e):
                         e -= 1
                     r["marks"].append({**m, "start": first + s, "stop": first + e})
             i = j

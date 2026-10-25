@@ -1149,5 +1149,45 @@
    "-- cite book \" \" step 1",
    "def q := 1"
   ]
+ },
+ {
+  "name": "leading comment",
+  "lines": [
+   "theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "  -- the step's own comment",
+   "  trivial",
+   "  -- cite book \"1\" step 2",
+   "  skip"
+  ]
+ },
+ {
+  "name": "blank then comment",
+  "lines": [
+   "theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "",
+   "  -- a comment",
+   "  trivial"
+  ]
+ },
+ {
+  "name": "marker before docstring",
+  "lines": [
+   "-- cite book \"1\" step 1",
+   "/-- doc -/",
+   "theorem x : True := trivial",
+   "theorem y : True := trivial"
+  ]
+ },
+ {
+  "name": "only comments then boundary",
+  "lines": [
+   "theorem x : True := by",
+   "  -- cite book \"1\" step 1",
+   "  -- just a comment",
+   "  -- cite end",
+   "  trivial"
+  ]
  }
 ]

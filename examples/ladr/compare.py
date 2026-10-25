@@ -4,8 +4,9 @@
     compare.py <expected annotations/> <actual annotations/> [--ignore <dotted path> …] [--json out]
 
 Prints the files only one tree has and, for each file both have, the fields that differ, as dotted
-paths. Fields named with `--ignore` (a path whose parts may be `*`) are counted apart. Exits 0
-when nothing differs beyond the ignored fields.
+paths. The ends of a side are compared as a set, as Literature Links reads them. Fields named with
+`--ignore` (a path whose parts may be `*`) are counted apart. Exits 0 when nothing differs beyond
+the ignored fields.
 """
 from __future__ import annotations
 
@@ -32,6 +33,16 @@ def leaves(value, path=""):
         yield path, value
 
 
+def unordered(rec):
+    """The annotation with the ends of each side in a fixed order: in Literature Links the order of
+    the ends on a side carries no meaning."""
+    if isinstance(rec, dict):
+        for side in ("subject", "object"):
+            if isinstance(rec.get(side), list):
+                rec[side] = sorted(rec[side], key=lambda e: json.dumps(e, sort_keys=True, ensure_ascii=False))
+    return rec
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("expected", type=Path)
@@ -44,8 +55,8 @@ def main() -> int:
     out = {"only_expected": sorted(a - b), "only_actual": sorted(b - a), "identical": 0,
            "ignored_only": 0, "ignored": collections.Counter(), "differing": {}}
     for rel in sorted(a & b):
-        x = dict(leaves(json.loads((args.expected / rel).read_text(encoding="utf-8"))))
-        y = dict(leaves(json.loads((args.actual / rel).read_text(encoding="utf-8"))))
+        x = dict(leaves(unordered(json.loads((args.expected / rel).read_text(encoding="utf-8")))))
+        y = dict(leaves(unordered(json.loads((args.actual / rel).read_text(encoding="utf-8")))))
         diffs = [p for p in sorted(x.keys() | y.keys()) if x.get(p, "<absent>") != y.get(p, "<absent>")]
         if not diffs:
             out["identical"] += 1

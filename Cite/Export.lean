@@ -91,8 +91,9 @@ def sourceJson (s : Source) : Json :=
     ("module", toJson (modName s.module)),
     ("fields", Json.mkObj (s.fields.toList.map fun (k, v) => (k, toJson v)))]
 
-/-- The declarations of module `mod` that have declaration ranges, with those ranges. Recursors and
-the other constructions Lean adds to an inductive type share its range, so they are left out. -/
+/-- The declarations of module `mod` that have declaration ranges, with those ranges. Recursors,
+the other constructions Lean adds to an inductive type, and a structure's constructor share the
+type's lines, so they are left out. -/
 def moduleDecls (env : Environment) (mod : Name) : CoreM (Array (Name × Nat × Nat)) := do
   let some idx := env.getModuleIdx? mod | return #[]
   let some data := env.header.moduleData[idx.toNat]? | return #[]
@@ -101,6 +102,9 @@ def moduleDecls (env : Environment) (mod : Name) : CoreM (Array (Name × Nat × 
     if ((privateToUserName? n).getD n).isInternal || isAuxRecursor env n || isNoConfusion env n ||
         (env.find? n matches some (.recInfo _)) then
       continue
+    -- a structure's constructor shares its lines; an inductive's are written out
+    if let some (.ctorInfo c) := env.find? n then
+      if isStructure env c.induct then continue
     if let some r ← findDeclarationRanges? n then
       out := out.push (n, r.range.pos.line, r.range.endPos.line)
   return out

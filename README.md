@@ -94,9 +94,21 @@ theorem neg_one_smul' (v : V) : (-1 : F) • v = -v :=
 
 A wrapper records its step while the proof around it is elaborated, often in a task of its own. An
 environment extension in mode `.sync` keeps what such tasks add, and Lean saves all of it, so the
-export reads wrappers from the environment. Lean elaborates and discards an `example`, with what a
-wrapper in its proof records; there the wrapper warns, and the step needs a comment. Wrappers nest,
-so of two steps whose lines cross, one needs a comment too. A wrapper of tactics re-indents them.
+export reads wrappers from the environment. The proof term is the same with or without a wrapper,
+and a wrapper of tactics re-indents them.
+
+Some wrappers record nothing where they are written, and the linter `linter.cite.wrappers` warns
+about each:
+
+- Lean discards the environment of an `example`, a `recall`, a `#`-command and `decreasing_by`;
+- Lean runs an autoParam's tactic where the argument is left out;
+- a branch of `first` that fails, or a `try` that fails, records nothing.
+
+A wrapper holds whole syntax: a tactic block, a term or a command. Lines that are part of one, such
+as a `have` and the first line of its proof, need a comment, and so do two steps whose lines cross.
+The command forms make the declaration an inner command, so linters that look at top-level
+commands, such as `linter.missingDocs`, skip it. Mathlib's `linter.style.multiGoal` warns about a
+wrapper around a `·` block while another goal is open.
 
 Comments change no line of the proof and fit anywhere. Lean 4.30 runs linters under
 `withoutModifyingEnv` or in a separate task, so a linter cannot record what it reads;

@@ -1,0 +1,310 @@
+{
+ "1": {
+  "wrap": [
+   "round 1: build ok, 43 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "statement": 3,
+   "tactic": 16,
+   "term": 3,
+   "comment": 2,
+   "command": 21
+  },
+  "why": {
+   "is part of a term": 1,
+   "ends inside a tactic's block": 1
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3442,
+   "only ignored fields differ": 233,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 45
+ },
+ "2": {
+  "wrap": [
+   "round 1: build ok, 89 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "comment": 31,
+   "command": 1,
+   "tactic": 84,
+   "statement": 4
+  },
+  "why": {
+   "is part of the statement": 6,
+   "inside an example": 11,
+   "ends inside a tactic's block": 9,
+   "ends inside a construct that continues, such as `induction … with`": 1,
+   "starts inside a construct, such as a calc step or a match arm": 2,
+   "is part of a term": 1,
+   "runs out of its block": 1
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3475,
+   "only ignored fields differ": 200,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 32
+ },
+ "3": {
+  "wrap": [
+   "round 1: build ok, 182 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "tactic": 167,
+   "comment": 78,
+   "command": 12,
+   "term": 2,
+   "statement": 1
+  },
+  "why": {
+   "ends inside a tactic's block": 21,
+   "holds a `classical` whose block goes on": 1,
+   "is part of a term": 17,
+   "starts at the statement and runs past it": 5,
+   "inside an example": 27,
+   "starts at a comment, which a wrapper's lines leave out": 2,
+   "is part of the statement": 2,
+   "runs out of its block": 3
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3226,
+   "only ignored fields differ": 449,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 131
+ },
+ "4": {
+  "wrap": [
+   "round 1: build ok, 60 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "command": 13,
+   "comment": 16,
+   "tactic": 43,
+   "term": 1,
+   "statement": 3
+  },
+  "why": {
+   "inside an example": 2,
+   "ends inside a tactic's block": 5,
+   "ends inside a construct that continues, such as `induction … with`": 1,
+   "starts inside a construct, such as a calc step or a match arm": 3,
+   "is part of a term": 1,
+   "runs out of its block": 1,
+   "starts at the statement and runs past it": 2,
+   "starts at a comment, which a wrapper's lines leave out": 1
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3595,
+   "only ignored fields differ": 80,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 30
+ },
+ "5": {
+  "wrap": [
+   "round 1: build ok, 237 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "tactic": 224,
+   "comment": 62,
+   "statement": 1,
+   "command": 11,
+   "term": 1
+  },
+  "why": {
+   "ends inside a tactic's block": 24,
+   "is part of a term": 14,
+   "starts at a comment, which a wrapper's lines leave out": 1,
+   "runs out of its block": 4,
+   "starts at the statement and runs past it": 1,
+   "ends inside a construct that continues, such as `induction … with`": 8,
+   "starts inside a construct, such as a calc step or a match arm": 5,
+   "is part of the statement": 3,
+   "crosses another wrapper": 2
+  },
+  "problems": [
+   {
+    "file": "LinearAlgebraDoneRightLean/Section_5B.lean",
+    "item": "5.34",
+    "step": 1,
+    "want": [
+     762,
+     765
+    ],
+    "got": [
+     [
+      762,
+      764
+     ]
+    ]
+   }
+  ],
+  "demoted": [],
+  "compare": {
+   "identical": 3329,
+   "only ignored fields differ": 345,
+   "other differences": 1,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {
+   "5B/5.34/proof-step-01.json": [
+    {
+     "field": "object[0].extensions.org.mathlib-initiative.formal-companion.overlay.snippet.text",
+     "expected": "private lemma exists_eigenvalue_of_odd_aux (n : ℕ) (hodd : Odd n) (W : Type u)\n    [AddCommGroup W] [Module ℝ W] [Module.Finite ℝ W] (hW : finrank ℝ W = n)\n    (T : W →ₗ[ℝ] W) : ∃ lam : ℝ, HasEigenvalue T lam := by\n  induction n using Nat.strong_induction_on generalizing W with",
+     "actual": "private lemma exists_eigenvalue_of_odd_aux (n : ℕ) (hodd : Odd n) (W : Type u)\n    [AddCommGroup W] [Module ℝ W] [Module.Finite ℝ W] (hW : finrank ℝ W = n)\n    (T : W →ₗ[ℝ] W) : ∃ lam : ℝ, HasEigenvalue T lam := by"
+    },
+    {
+     "field": "object[0].location.lines[1]",
+     "expected": 765,
+     "actual": 764
+    }
+   ]
+  },
+  "seconds": 112
+ },
+ "6": {
+  "wrap": [
+   "round 1: build ok, 127 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "tactic": 89,
+   "command": 13,
+   "statement": 4,
+   "term": 21,
+   "comment": 23
+  },
+  "why": {
+   "is part of the statement": 1,
+   "runs out of its block": 2,
+   "ends inside a tactic's block": 8,
+   "inside an example": 1,
+   "is part of a term": 8,
+   "starts at the statement and runs past it": 3
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3390,
+   "only ignored fields differ": 285,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 52
+ },
+ "7": {
+  "wrap": [
+   "round 1: build ok, 290 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "command": 8,
+   "term": 22,
+   "comment": 50,
+   "tactic": 256,
+   "statement": 4
+  },
+  "why": {
+   "is part of a term": 15,
+   "starts at the statement and runs past it": 4,
+   "ends inside a tactic's block": 22,
+   "is part of the statement": 3,
+   "runs out of its block": 5,
+   "crosses another wrapper": 1
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3207,
+   "only ignored fields differ": 468,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 159
+ },
+ "8": {
+  "wrap": [
+   "round 1: build ok, 98 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "tactic": 87,
+   "comment": 16,
+   "term": 11
+  },
+  "why": {
+   "crosses another wrapper": 1,
+   "is part of a term": 8,
+   "ends inside a tactic's block": 3,
+   "runs out of its block": 1,
+   "ends inside a construct that continues, such as `induction … with`": 1,
+   "starts inside a construct, such as a calc step or a match arm": 1,
+   "is part of the statement": 1
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3490,
+   "only ignored fields differ": 185,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 62
+ },
+ "9": {
+  "wrap": [
+   "round 1: build ok, 127 wrappers, 0 demoted"
+  ],
+  "forms": {
+   "tactic": 92,
+   "comment": 30,
+   "term": 32,
+   "command": 3
+  },
+  "why": {
+   "is part of a term": 9,
+   "starts at the statement and runs past it": 3,
+   "ends inside a tactic's block": 12,
+   "inside an example": 4,
+   "runs out of its block": 2
+  },
+  "problems": [],
+  "demoted": [],
+  "compare": {
+   "identical": 3456,
+   "only ignored fields differ": 219,
+   "other differences": 0,
+   "only in expected": 0,
+   "only in actual": 0
+  },
+  "differing": {},
+  "seconds": 131
+ }
+}

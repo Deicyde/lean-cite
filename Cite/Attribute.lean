@@ -144,10 +144,10 @@ declared with `cite_source`. Options follow the entry, then an optional comment:
 An `example` keeps nothing; before one, write `cite src "id" in` instead. -/
 syntax (name := cite) &"cite" ppSpace ident ppSpace str (ppSpace citeOpt)* (ppSpace str)? : attr
 
-/-- Is `decl` the name Lean gives an `example` while elaborating it? -/
-def isExampleName : Name → Bool
-  | .str _ "_example" => true
-  | _ => false
+/-- Is `decl` the name Lean gives an `example` while elaborating it, or a name under it, as for a
+`where` helper of an example? -/
+def isExampleName (decl : Name) : Bool :=
+  decl.components.contains `_example
 
 initialize registerBuiltinAttribute {
   name := `cite
@@ -213,14 +213,19 @@ def commandStep (src : Ident) (id : StrLit) (opts : Array (String × String × S
     | "rel" => rel := (val, o)
     | k => throwErrorAt o "a step takes `rel` and no `{k}`"
   if let some c := comment then throwErrorAt c "a step takes no comment"
-  let some (form, n, _) := step | throwError "no step"
+  let some (form, n, o) := step | throwError "no step"
   let fm ← getFileMap
   let some pos := kw.getPos? | throwErrorAt inner "the command has no position"
-  -- the statement runs to the end of the signature; the command, to its end
+  if form == "statement" && inner.isOfKind ``Parser.Command.mutual then
+    throwErrorAt o "a `mutual` block has several statements; mark each declaration's instead"
+  -- the statement runs to the end of the signature, or of the name when the signature is empty;
+  -- the command, to its end
   let last ← if form == "statement" then
-      match inner.find? fun s => s.isOfKind ``Parser.Command.declSig ||
-          s.isOfKind ``Parser.Command.optDeclSig with
-      | some sig => pure sig.getTailPos?
+      let sig := inner.find? fun s => s.isOfKind ``Parser.Command.declSig ||
+          s.isOfKind ``Parser.Command.optDeclSig
+      match sig.bind (·.getTailPos?) <|> (inner.find? (·.isOfKind ``Parser.Command.declId)).bind
+          (·.getTailPos?) <|> kw.getTailPos? with
+      | some p => pure (some p)
       | none => throwErrorAt inner "this command has no statement"
     else pure inner.getTailPos?
   let some stop := last | throwErrorAt inner "the command has no position"

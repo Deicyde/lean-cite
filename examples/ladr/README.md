@@ -75,14 +75,15 @@ or part, deletes the adopted mathlib link, and shifts, pads, drops or changes a 
 the unmutated dump runs as a control, and neither path reports a difference. Then both paths catch
 all ten mutations: each either reports a difference or refuses the dump.
 
-The whole tagged project builds (3,061 jobs).
+Both tagged branches build in full (3,062 jobs each).
 
 ## Steps marked by wrappers
 
-`migrate.py --steps wrappers` marks each step's lines with a wrapper where the syntax allows, and
-with a comment marker elsewhere. It wrote the local branch `cite-prototype-wrappers` (from
-`cite-prototype`, commit `d2d0b54`, in the worktree `~/Desktop/LEAN/linear-algebra-done-right-lean-cite-wrappers`;
-not pushed). Its outputs are in `out/wrappers/`.
+`migrate.py --steps wrappers` marks a step's lines with a wrapper where they are whole syntax that a
+wrapper on lines of its own can hold, and with a comment marker elsewhere. For chapter 1 it wrote
+the local branch `cite-prototype-wrappers`, commit `d2d0b54`, on top of `cite-prototype`'s
+`0be8137`, in the worktree `~/Desktop/LEAN/linear-algebra-done-right-lean-cite-wrappers`; not
+pushed. Its outputs are in `out/wrappers/`.
 
 | Form | Ranges |
 |---|---|
@@ -92,17 +93,61 @@ not pushed). Its outputs are in `out/wrappers/`.
 | a term, `cite … step k in` | 3 |
 | a comment marker | 2 |
 
-The two comments mark lines that no wrapper holds exactly:
+In 1.32, step 2 is the function at the head of a term whose argument is step 1. In 1.45, step 4 is
+a `have` and the first line of its proof, whose other lines are step 3. These two take comment
+markers. A wrapper in parentheses could hold the first, but the script places wrappers only on
+lines of their own. `out/wrappers/migration-report.json` gives each range's form, and why a comment
+marks it.
 
-- In 1.32, step 2 is the function at the head of a term whose argument is step 1.
-- In 1.45, step 4 is a `have` and the first line of its proof, whose other lines are step 3.
+`wrap_chapter.py` lets Lean judge each wrapper. It builds the tagged files, exports them, and turns
+into a comment any wrapper that recorded other lines or sits where the build fails, until nothing
+changes. For chapter 1 it changes nothing. Both comparisons give the same results as with comment
+markers: 3,442 files identical and 233 differing only in `provenance.method`, and 264 of 264 links
+matching. `mutate.py` catches all ten mutations against a clean control. In the chapter's four
+files, the comment markers add 45 lines. The wrappers add 46 and re-indent the 43 lines of the
+tactic blocks they wrap.
 
-`out/wrappers/migration-report.json` gives each range's form, and why a comment marks it.
+## The whole book
 
-Both comparisons give the same results as with comment markers: 3,442 files identical and 233
-differing only in `provenance.method`, and 264 of 264 links matching. `mutate.py` catches all ten
-mutations against a clean control. In the chapter's four files, the comment markers add 45 lines.
-The wrappers add 46 and re-indent the 43 lines of the tactic blocks they wrap.
+`all_chapters.py` runs `wrap_chapter.py`, `export_from_tags.py` and `compare.py` on each chapter in
+turn, in one tagged copy reset to the untagged files each time. Every chapter's tagged files build.
+
+| Chapter | Lean ranges | Wrappers | Comments | Files other than provenance that differ |
+|---|---|---|---|---|
+| 1 | 45 | 43 | 2 | 0 |
+| 2 | 120 | 89 | 31 | 0 |
+| 3 | 260 | 182 | 78 | 0 |
+| 4 | 76 | 60 | 16 | 0 |
+| 5 | 299 | 237 | 62 | 1 |
+| 6 | 150 | 127 | 23 | 0 |
+| 7 | 340 | 290 | 50 | 0 |
+| 8 | 114 | 98 | 16 | 0 |
+| 9 | 157 | 127 | 30 | 0 |
+| all | 1,561 | 1,253 | 308 | 1 |
+
+The wrappers are 1,058 tactic blocks, 93 terms, 82 whole commands and 20 statements. The comments
+take lines that no wrapper on lines of its own holds:
+
+| Why a comment | Ranges |
+|---|---|
+| ends inside a tactic's block | 105 |
+| is part of a term | 74 |
+| inside an `example`, which Lean discards | 45 |
+| runs out of its block | 19 |
+| starts at the statement and runs past it | 18 |
+| is part of the statement | 16 |
+| ends inside a construct that continues, such as `induction … with` | 11 |
+| starts inside a construct, such as a calc step | 11 |
+| starts at a comment | 4 |
+| crosses another wrapper | 4 |
+| holds a `classical` whose block goes on | 1 |
+
+The one difference is 5.34 step 1. It is the statement and the first line of the proof, and step 3
+is that line and the next. The two ranges cross, and both need comments; comment markers cannot
+cross, so step 1 loses its last line.
+
+Each chapter was tagged alone. `migrate.py` rewrites the files it touches from the untagged ones,
+so tagging several chapters in one branch needs it to start from the tagged files instead.
 
 ## What the tags carry, and what they do not
 
@@ -151,9 +196,12 @@ python3 mutate.py $L/linear-algebra-done-right-companion $L/linear-algebra-done-
 python3 test_cite_scan.py   # after `lake build CiteTest` in the package
 ```
 
-For wrappers, run `migrate.py` with `--steps wrappers --tagged $L/linear-algebra-done-right-lean-cite-wrappers
---out out/wrappers`, then the same steps on `out/wrappers/` and that worktree; give `mutate.py`
-the dump `out/wrappers/dump.json` as its last argument.
+For wrappers, run `wrap_chapter.py --companion $L/linear-algebra-done-right-companion --original
+$L/linear-algebra-done-right-lean-litlinks --tagged $L/linear-algebra-done-right-lean-cite-wrappers
+--chapter 1 --out out/wrappers`, then the comparisons on `out/wrappers/` and that worktree; give
+`mutate.py` the dump `out/wrappers/dump.json` as its last argument. For the whole book, run
+`all_chapters.py` with the same `--companion` and `--original`, a `--tagged` copy of that worktree
+(without `.git`, beside a `lean-cite`), an `--out` directory, and the chapters.
 
 `.lake/cite-scratch/Export.lean` in the tagged worktree imports Sections 1A, 1B, 1C and 6A and runs
 `#cite_export`. `migrate.py` rewrites the tagged files from the untagged ones, so rerunning it

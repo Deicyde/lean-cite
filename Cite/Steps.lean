@@ -31,8 +31,9 @@ a relation.
   one of them `step`, must parse as a marker, or is reported as malformed. Other comments are prose.
 
 A line of code is a line with something outside comments; blank lines and comment lines are not
-code. A marker opens a range at the next line of code, which the range always holds. The range ends
-before the first of:
+code. A marker opens a range at the next line that is not blank, so that a comment on the step
+belongs to it, and the range holds the line of code after that. From there, the range ends before
+the first of:
 
 * the next marker, malformed marker or `-- cite end`;
 * the next line of code indented less than the marker's column or, for a marker in the first
@@ -47,8 +48,8 @@ interpolated string's braces, raw strings, character literals and `«…»` name
 closer that closes nothing shows that it has lost its place, and the scan reports it.
 
 Comment markers change no line of the proof, and fit where the wrappers of `Cite/StepSyntax.lean`
-cannot: in an `example`'s proof, which Lean discards with what a wrapper records, and on lines that
-cross another step's. Lean runs linters under `withoutModifyingEnv` or in a separate task, so a
+cannot: in an `example`'s proof, which Lean discards with what a wrapper records, on lines that are
+only part of a syntax node, and on lines that cross another step's. Lean runs linters under `withoutModifyingEnv` or in a separate task, so a
 linter cannot record what it reads; `#cite_export` reads the markers from the source. The linter
 `linter.cite.steps` checks each command's markers while it compiles: that they parse, mark code,
 cite a declared source, and mark lines inside the command.
@@ -283,19 +284,23 @@ def scan (lines : Array String) (first : Nat := 1) (slice := false) : Scan := Id
         group := group.push m
         j := j + 1
       r := { r with markers := r.markers ++ group }
+      -- the range opens at the next line that is not blank, a comment on the step included, and
+      -- needs a line of code
       let mut s := j
-      while s < n && !isCode s && !isBoundary s do s := s + 1
-      if s ≥ n || !isCode s then
+      while s < n && (match kinds[s]! with | .blank => true | _ => false) do s := s + 1
+      let mut c := s
+      while c < n && !isCode c && !isBoundary c do c := c + 1
+      if c ≥ n || !isCode c then
         r := { r with problems := r.problems.push (first + i, "the `-- cite` marker marks no code") }
       else
         for m in group do
-          let mut k := s + 1
+          let mut k := c + 1
           while k < n && !isBoundary k &&
               !(isCode k && (if m.column == 0 then indentOf lines[k]! == 0
                              else indentOf lines[k]! < m.column)) do
             k := k + 1
           let mut e := k - 1
-          while e > s && !isCode e do e := e - 1
+          while e > c && !isCode e do e := e - 1
           r := { r with marks := r.marks.push { marker := m, start := first + s, stop := first + e } }
       i := j
     | _ => i := i + 1
