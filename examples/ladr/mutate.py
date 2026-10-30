@@ -102,7 +102,8 @@ for name, mutate in [(f.__name__[2:], f) for f in (m_none, m_delete, m_rel, m_ro
         first = "compare.py found differences" if c.returncode else "NOT CAUGHT"
     g = run([sys.executable, "../../scripts/cite_ll.py", work / "dump.json", "--project",
              "https://github.com/rkirov/linear-algebra-done-right-lean", "--commit", commit,
-             "--mathlib-commit", MATHLIB_COMMIT, "--layout", "out/layout.json", "--out", work / "generic"])
+             "--mathlib-commit", MATHLIB_COMMIT, "--layout", "out/layout.json", "--strict",
+             "--out", work / "generic"])
     if g.returncode:
         second = "cite_ll failed: " + g.stderr.strip().splitlines()[-1]
     else:

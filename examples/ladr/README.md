@@ -287,12 +287,13 @@ python3 compare.py $L/linear-algebra-done-right-companion/annotations out/annota
 python3 layout_from_annotations.py $L/linear-algebra-done-right-companion/annotations ladr4e > out/layout.json
 python3 ../../scripts/cite_ll.py out/dump.json --project https://github.com/rkirov/linear-algebra-done-right-lean \
   --commit <cite-prototype's commit> --mathlib-commit 5450b53e5ddc75d46418fabb605edbf36bd0beb6 \
-  --layout out/layout.json --out out/generic
+  --layout out/layout.json --strict --out out/generic
 python3 compare_links.py out/generic/ladr4e.jsonl $L/linear-algebra-done-right-companion/annotations \
   $L/linear-algebra-done-right-lean-litlinks $L/linear-algebra-done-right-lean-cite 1
 python3 mutate.py $L/linear-algebra-done-right-companion $L/linear-algebra-done-right-lean-litlinks \
   $L/linear-algebra-done-right-lean-cite <a scratch directory>
 python3 test_cite_scan.py   # after `lake build CiteTest` in the package
+python3 test_cite_ll.py     # cite_ll.py on out/dump.json, with the layout read back from out/generic
 ```
 
 `migrate.py` rewrites the tagged files from the untagged ones, so rerunning it discards hand edits.

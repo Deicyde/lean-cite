@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lean ${{ matrix.toolchain }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # the pinned toolchain, and the newest the package has been built with
+        toolchain: ["pinned", "leanprover/lean4:v4.36.0-rc1"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Use the matrix toolchain
+        if: matrix.toolchain != 'pinned'
+        run: echo "${{ matrix.toolchain }}" > lean-toolchain
+
+      # CiteTest's #guard_msgs blocks are the Lean tests, including Mathlib's cross-reference
+      # layouts (CiteTest/Mathlib/); building it also writes .lake/scan_results.json
+      - name: Build and run the Lean tests
+        run: lake build Cite CiteTest
+
+      - name: Check the Python scanner against Lean's
+        run: python3 -B examples/ladr/test_cite_scan.py
+
+      - name: Check the converter to Literature Links
+        run: python3 -B examples/ladr/test_cite_ll.py

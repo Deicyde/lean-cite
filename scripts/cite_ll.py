@@ -3,7 +3,7 @@
 
     cite_ll.py dump.json --project <repository URL> --commit <sha> --out <dir>
         [--mathlib-commit <sha>] [--lean-repo <module prefix>=<repository URL>@<sha> …]
-        [--layout layout.json]
+        [--layout layout.json [--strict]]
 
 A declaration's Lean end names the repository and commit of its module. Modules under the roots
 given to `#cite_export` are the project's (`--project`, `--commit`); modules under a prefix given
@@ -19,7 +19,9 @@ one per proof step:
   other source is the whole document, with the entry as the end's title, unless `--layout` places
   the entry. A layout is a JSON object mapping a source's name to its entries, and an entry such as
   `"3.21"` or `"3.21 proof, step 2"` to `{"subject": [ends], "kind": …, "status": …}`: what the
-  book's layout tooling knows, which tags do not.
+  book's layout tooling knows, which tags do not. With a layout, an entry it lacks, such as a
+  mistyped item or a step past the end of its proof, is named in a message; `--strict` makes that
+  an error, and nothing is written.
 * the object is the Lean: `{declaration, module}` for a declaration; `{module, lines: [n]}` for an
   `example` or other command without a name, n being the line of its keyword, after any docstring
   and attributes; `{declaration, module, lines: [a, b]}` for the lines of a proof step.
@@ -65,10 +67,13 @@ def main() -> int:
     ap.add_argument("--mathlib-commit")
     ap.add_argument("--lean-repo", action="append", default=[], metavar="PREFIX=URL@SHA")
     ap.add_argument("--layout", type=Path)
+    ap.add_argument("--strict", action="store_true", help="fail on an entry the layout lacks")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     dump = json.loads(args.dump.read_text(encoding="utf-8"))
     layout = json.loads(args.layout.read_text(encoding="utf-8")) if args.layout else {}
+    if args.strict and not args.layout:
+        sys.exit("--strict needs --layout")
     sources = {s["name"]: s for s in dump["sources"]}
     # module prefix -> (repository, commit); an explicit --lean-repo overrides the rest
     repos = {root: (args.project, args.commit) for root in dump["roots"]}
@@ -81,6 +86,7 @@ def main() -> int:
             sys.exit(f"--lean-repo {spec}: expected PREFIX=URL@SHA")
         repos[prefix] = (url, sha)
     notes = collections.Counter()
+    unplaced = collections.Counter()
 
     def repo_of(module: str | None) -> tuple[str, str] | None:
         if not module:
@@ -96,6 +102,9 @@ def main() -> int:
         placed = layout.get(src, {}).get(entry)
         if placed:
             return placed["subject"], {k: placed[k] for k in ("kind", "status") if placed.get(k)}
+        if args.layout:
+            # a tag is checked against the book only here: unplaced, it would link the whole document
+            unplaced[(src, entry)] += 1
         fields = sources[src].get("fields", {})
         if "uri" not in fields:
             sys.exit(f"the source `{src}` has no `uri` field, which its ends need")
@@ -177,6 +186,15 @@ def main() -> int:
             "object": [obj]})
         counts["mathlib"] += 1
 
+    for (src, entry), n in sorted(unplaced.items()):
+        where = "the layout has no entries for it" if src not in layout else "not in the layout"
+        notes[f"{src} {entry!r}: {where}, so its subject is the whole document"] += n
+    if args.strict and unplaced:
+        for note, n in notes.items():
+            print(f"{note} ({n})", file=sys.stderr)
+        sys.exit(f"--strict: {len(unplaced)} entries are not in the layout; nothing was written")
+    if args.layout:
+        counts["unplaced"] = len(unplaced)
     args.out.mkdir(parents=True, exist_ok=True)
     for name, annotations in out.items():
         seen, kept = set(), []

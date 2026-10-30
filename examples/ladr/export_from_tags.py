@@ -106,9 +106,9 @@ def main() -> int:
     steps = [s for s in dump["steps"] if s["source"] == SOURCE and in_chapter(s["id"], args.chapter)]
 
     # Overrides that the tags replace: those about the chapter's items or in its files. The book's
-    # own overrides (displayed equations, notes on absences) stay.
+    # own overrides (displayed equations, notes on absences, titles) stay.
     overrides = json.loads((args.companion / "scripts" / "annotation_overrides.json").read_text(encoding="utf-8"))
-    kept = [e for e in overrides if "equation" in e or "absence" in e or
+    kept = [e for e in overrides if "equation" in e or "absence" in e or "label" in e or
             not (in_chapter(e["item"], args.chapter) or e.get("file") in chapter_files)]
     tmp = Path(tempfile.mkdtemp(prefix="cite-ladr-"))
     (tmp / "overrides.json").write_text(json.dumps(kept, ensure_ascii=False), encoding="utf-8")
@@ -118,7 +118,7 @@ def main() -> int:
               "overrides.kept": len(kept), "overrides.replaced": len(overrides) - len(kept)}
 
     def apply_with_tags(lean, path):
-        n, external, equations, absences = original_apply(lean, path)
+        n, external, equations, absences, labels = original_apply(lean, path)
         for lf in lean:
             templates = {}
             for d in lf.decls:
@@ -185,7 +185,7 @@ def main() -> int:
                              "mathlib": {"declaration": t["declaration"], "path": rel, "line": line,
                                          "kind": keyword, "statement": statement, "truncated": truncated}})
             report["tags.mathlib"] += 1
-        return n, external, equations, absences
+        return n, external, equations, absences, labels
 
     ea.apply_overrides = apply_with_tags
 

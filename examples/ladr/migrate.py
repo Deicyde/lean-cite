@@ -214,7 +214,7 @@ def main() -> int:
 
     files = sorted(str(p.relative_to(args.original)) for p in (args.original / "LinearAlgebraDoneRightLean").glob("*.lean"))
     lean = [ea.parse_lean(args.original, rel) for rel in files]
-    _, external, _, _ = ea.apply_overrides(lean, args.companion / "scripts" / "annotation_overrides.json")
+    _, external, *_ = ea.apply_overrides(lean, args.companion / "scripts" / "annotation_overrides.json")
     by_path = {lf.path: lf for lf in lean}
     chapter_files = {lf.path for lf in lean if lf.section.startswith(args.chapter) and lf.section[len(args.chapter):] in ("", "A", "B", "C", "D", "E", "F")}
 

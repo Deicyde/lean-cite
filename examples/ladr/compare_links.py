@@ -5,8 +5,8 @@ A link is its id, relation and set of Lean ends, each end being where it points,
 title (an exercise's part). Kind and status are not compared: cite_ll.py takes both from the
 layout. The tags' line numbers are those of the tagged branch, so they are mapped back to the
 untagged files first; a range whose first or last line the tagging added is reported. Checked
-absences (`noMatch` with no Lean end) are the book's side, which no tag states, and are counted
-apart.
+absences (`noMatch`, whose Lean end is at most the declarations of the item's proof) are the book's
+side, which no tag states, and are counted apart.
 
     compare_links.py <generic source.jsonl> <annotations/> <untagged repo> <tagged repo> <chapter>
 """
@@ -55,7 +55,7 @@ for p in Path(annotations).rglob("*.json"):
     rec = json.loads(p.read_text(encoding="utf-8"))
     if not in_chapter(rec["id"].split(" proof, step ")[0], chapter):
         continue
-    if rec.get("relation") == "noMatch" and not rec.get("object"):
+    if rec.get("relation") == "noMatch":
         absences += 1
         continue
     # the companion's Lean ends inherit the repository from the folder defaults

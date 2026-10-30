@@ -19,9 +19,15 @@ public meta import Lean.Meta.Instances
   declaration it tags, which may be the project's own.
 
 This package depends on Lean alone, so it reads Mathlib's `tagExt` through Mathlib's own API: it
-elaborates and evaluates a term that names it. That term exists for the two layouts Mathlib has
-had, `Mathlib.Tactic.StacksAttribute` (`Mathlib.StacksTag.tagExt`, Stacks and Kerodon) and, from
-May 2026, `Mathlib.Tactic.CrossRefAttribute` (`Mathlib.CrossRef.tagExt`, every database).
+elaborates and evaluates a term that names it. There is a term for each layout Mathlib has had:
+
+* to 2026-05-12, `Mathlib.StacksTag.tagExt` (Stacks and Kerodon);
+* from 2026-05-13, `Mathlib.CrossRef.tagExt` with `databaseURL` and `databaseLabel`;
+* from 2026-07-04, with `Database.url : Database → String` and `Database.shortName`;
+* from 2026-09-01 (Mathlib v4.34.0), with `Database.url : Database → String → String`.
+
+The first term that elaborates is used. When the extension is there but no term fits, the export
+warns and leaves Mathlib's cross-references out.
 
 A file of the module system sees another module's theorems as axioms and its private declarations
 not at all. Run the export with `lake env lean export.lean` from a file that imports what it should
@@ -162,12 +168,24 @@ def stepsOf (mod : Name) (cs : Array Citation) (tags : Array StepTag) : CommandE
   return out
 
 /-- Mathlib's cross-references as (declaration, database, address, identifier, comment), one term
-for each layout of Mathlib's attribute; the first whose extension is in the environment is used. -/
+for each layout of Mathlib's attribute, newest first; the first that elaborates is used. -/
 def mathlibReaders : List (Name × String) := [
   (`Mathlib.CrossRef.tagExt, "fun (env : Lean.Environment) =>
     let s := Lean.PersistentEnvExtension.getState Mathlib.CrossRef.tagExt env
     (s.2.flatten.appendList s.1).map fun t =>
       (t.declName, t.database.shortName, t.database.url t.tag, t.tag, t.comment)"),
+  -- 2026-07-04 to 2026-08-31: `url` is the address of the database's tag pages
+  (`Mathlib.CrossRef.tagExt, "fun (env : Lean.Environment) =>
+    let s := Lean.PersistentEnvExtension.getState Mathlib.CrossRef.tagExt env
+    (s.2.flatten.appendList s.1).map fun t =>
+      (t.declName, t.database.shortName, t.database.url ++ t.tag, t.tag, t.comment)"),
+  -- 2026-05-13 to 2026-07-03: no short name, so it is the label's first word ("Stacks Tag")
+  (`Mathlib.CrossRef.tagExt, "fun (env : Lean.Environment) =>
+    let s := Lean.PersistentEnvExtension.getState Mathlib.CrossRef.tagExt env
+    (s.2.flatten.appendList s.1).map fun t =>
+      let label := Mathlib.CrossRef.databaseLabel t.database
+      (t.declName, ((label.splitOn \" \").headD label).toLower,
+        Mathlib.CrossRef.databaseURL t.database ++ t.tag, t.tag, t.comment)"),
   (`Mathlib.StacksTag.tagExt, "fun (env : Lean.Environment) =>
     let s := Lean.PersistentEnvExtension.getState Mathlib.StacksTag.tagExt env
     (s.2.flatten.appendList s.1).map fun t =>
@@ -181,14 +199,24 @@ abbrev MathlibRow := Name × String × String × String × String
 
 unsafe def readMathlibUnsafe : CommandElabM (Option (Name × Array MathlibRow)) := do
   let env ← getEnv
+  let type := Expr.forallE `env (mkConst ``Environment) (toTypeExpr (Array MathlibRow)) .default
+  let mut tried : Array Name := #[]
   for (ext, src) in mathlibReaders do
     unless env.contains ext do continue
-    let stx ← match Parser.runParserCategory env `term src with
-      | .ok stx => pure stx
-      | .error e => throwError "cannot parse the reader of `{ext}`: {e}"
-    let type := Expr.forallE `env (mkConst ``Environment) (toTypeExpr (Array MathlibRow)) .default
-    let f ← liftTermElabM <| Term.evalTerm (Environment → Array MathlibRow) type stx
-    return some (ext, f env)
+    tried := tried.push ext
+    -- a reader for another layout fails to elaborate; its errors are not this command's
+    let messages := (← get).messages
+    try
+      let .ok stx := Parser.runParserCategory env `term src | continue
+      let f ← liftTermElabM <| Term.withoutErrToSorry <|
+        Term.evalTerm (Environment → Array MathlibRow) type stx
+      return some (ext, f env)
+    catch _ =>
+      modify fun s => { s with messages }
+  unless tried.isEmpty do
+    let ext : Name := tried[0]!
+    logWarning m!"Mathlib's cross-references are left out: `{ext}` is imported, but none of the \
+      {tried.size} readers for its layouts fits this Mathlib"
   return none
 
 /-- Mathlib's cross-references, with the extension they were read from, when Mathlib's attribute

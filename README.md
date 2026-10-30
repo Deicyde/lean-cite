@@ -16,8 +16,8 @@ attached. On every build Lean checks that each tag names a declared source and a
 and that each step marker marks code. Whether a link is mathematically right stays a person's call.
 
 **Status.** A prototype, in the private repository Deicyde/lean-cite. It depends on Lean core only.
-It has been built with Lean 4.30.0-rc2, its pinned toolchain, and 4.36.0-rc1; no other version has
-been tried.
+CI builds and tests it with Lean 4.30.0-rc2, its pinned toolchain, and 4.36.0-rc1. The package
+alone has also been built with 4.31.0, 4.32.0, 4.33.1 and 4.35.0.
 
 It was tested on *Linear Algebra Done Right*, whose companion keeps its book-to-Lean links outside
 the Lean. Each chapter's links were written into the Lean as tags. The companion's own exporter was
@@ -231,7 +231,7 @@ does not start with `module`.
 ```sh
 python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   [--mathlib-commit <sha>] [--lean-repo <module prefix>=<URL>@<sha> …] \
-  [--layout layout.json] --out annotations/
+  [--layout layout.json [--strict]] --out annotations/
 ```
 
 - It writes one `<source>.jsonl` per cited source, with an annotation for each citation and each
@@ -246,6 +246,9 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   sit on the page. It maps a source's name to its entries, and an entry such as `"3.21"` or
   `"3.21 proof, step 2"` to `{"subject": [ends], "kind": …, "status": …}`; `cite_ll.py --help` has
   the details. `examples/ladr/layout_from_annotations.py` writes one from existing annotations.
+- A layout is also the only check of a tag against the book. Each entry it lacks, such as a
+  mistyped item or a step past the end of its proof, is named on stderr and linked to the whole
+  document. With `--strict` it is an error, and nothing is written.
 
 ## Limits and design notes
 
@@ -267,9 +270,20 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   saves it. A linter cannot record anything, since Lean runs linters under `withoutModifyingEnv`
   or in a separate task. Comment markers are therefore read from the source by the export.
 - **Mathlib's cross-references** are read through Mathlib's own API, by evaluating a term, so the
-  package does not depend on Mathlib. Both versions of Mathlib's cross-reference attribute are
-  read: `Mathlib.StacksTag.tagExt` (Stacks and Kerodon) and, from May 2026,
-  `Mathlib.CrossRef.tagExt` (every database).
+  package does not depend on Mathlib. Mathlib's attribute has had four layouts, and each has a
+  term; the first that elaborates is used:
+
+  | Mathlib | Extension | Address and name |
+  |---|---|---|
+  | to 2026-05-12 | `Mathlib.StacksTag.tagExt` | Stacks or Kerodon |
+  | 2026-05-13 to 07-03 | `Mathlib.CrossRef.tagExt` | `databaseURL db ++ tag`; the name is the label's first word |
+  | 2026-07-04 to 08-31 | `Mathlib.CrossRef.tagExt` | `db.url ++ tag`, `db.shortName` |
+  | from 2026-09-01 (v4.34.0) | `Mathlib.CrossRef.tagExt` | `db.url tag`, `db.shortName` |
+
+  When the extension is imported but no term fits, the export warns and leaves Mathlib out.
+  `CiteTest/Mathlib/` tests each layout on a copy of its API. Each was also read from a real
+  Mathlib: v4.30.0-rc2 (the LADR companion's), v4.31.0's attribute file built alone, v4.32.0,
+  v4.33.1 and v4.35.0.
 - **Cost.** The comment-marker linter reads each command's lines and those up to the next command.
   A file of 1,500 documented theorems with a marker each (6,004 lines) elaborates in 0.67 s with it
   and 0.57 s without.
@@ -283,6 +297,7 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
 | `Cite/StepSyntax.lean` | the tactic and term wrappers, and `linter.cite.wrappers` |
 | `Cite/Steps.lean` | the comment markers: their scanner and `linter.cite.steps` |
 | `Cite/Export.lean` | `#cite_export`, and the reader of Mathlib's cross-references |
-| `CiteTest/` | the tests: `lake build CiteTest`. `scan_cases.json` is the scanner's corpus |
+| `CiteTest/` | the tests: `lake build CiteTest`. `scan_cases.json` is the scanner's corpus; `Mathlib/` has a copy of each layout of Mathlib's cross-reference API |
 | `scripts/cite_ll.py` | the converter to Literature Links |
-| `examples/ladr/` | the test on *Linear Algebra Done Right*: the scripts that tag it and check the tags against its annotations, and their outputs |
+| `examples/ladr/` | the test on *Linear Algebra Done Right*: the scripts that tag it and check the tags against its annotations, and their outputs. `test_cite_scan.py` and `test_cite_ll.py` need nothing outside this repository |
+| `.github/workflows/ci.yml` | CI: `lake build Cite CiteTest`, then both Python tests |
