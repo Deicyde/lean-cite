@@ -24,7 +24,7 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 45
+  "seconds": 32
  },
  "2": {
   "wrap": [
@@ -55,7 +55,7 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 32
+  "seconds": 33
  },
  "3": {
   "wrap": [
@@ -88,7 +88,7 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 131
+  "seconds": 69
  },
  "4": {
   "wrap": [
@@ -121,7 +121,7 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 30
+  "seconds": 36
  },
  "5": {
   "wrap": [
@@ -184,7 +184,7 @@
     }
    ]
   },
-  "seconds": 112
+  "seconds": 105
  },
  "6": {
   "wrap": [
@@ -215,7 +215,7 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 52
+  "seconds": 59
  },
  "7": {
   "wrap": [
@@ -246,7 +246,7 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 159
+  "seconds": 140
  },
  "8": {
   "wrap": [
@@ -280,6 +280,7 @@
  },
  "9": {
   "wrap": [
+   "round 1: a build failed and the next passed: LinearAlgebraDoneRightLean/Section_9C.lean:615:18: elaboration function for `Matrix.«term_ᴴ»` has not been implemented",
    "round 1: build ok, 127 wrappers, 0 demoted"
   ],
   "forms": {
@@ -305,6 +306,6 @@
    "only in actual": 0
   },
   "differing": {},
-  "seconds": 131
+  "seconds": 61
  }
 }

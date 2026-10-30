@@ -228,7 +228,9 @@ def main() -> int:
     companion = args.companion
     sys.argv = ["export_annotations.py", "--repo", str(args.original),
                 "--pdf", str(companion / ".lake" / "overlay-pdf" / "axler-ladr-4e.pdf"),
-                "--commit", "94a528c13c1ba4fb342377e62299ee4288f841ab", "--retrieved", "2026-05-03",
+                "--commit", "94a528c13c1ba4fb342377e62299ee4288f841ab",
+                "--retrieved", json.loads((companion / "annotations" / "_defaults.json").read_text(encoding="utf-8"))
+                ["subject"]["citation"]["accessed"]["raw"],
                 "--site-dir", str(companion / ".lake" / "verso"), "--out", str(args.out),
                 "--overrides", str(tmp / "overrides.json"), "--proof-steps", str(tmp / "proof_steps.json"),
                 *(["--report", str(args.report)] if args.report else [])]

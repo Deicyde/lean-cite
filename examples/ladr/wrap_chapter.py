@@ -8,6 +8,10 @@ Runs migrate.py --steps wrappers, builds the files it touched, runs #cite_export
 every wrapper recorded exactly the lines it was meant to. A wrapper that recorded other lines, or
 that sits in a declaration that does not build, is demoted to a comment marker, and the loop runs
 again until it changes nothing. `<out>/demoted.json` lists the demotions, with the reason.
+
+A failed build is run again before any wrapper is blamed, since a build can fail for reasons that
+have nothing to do with the wrappers (see "Intermittent build failures" in the README). The rounds
+report each retry, with the first error it did not repeat.
 """
 from __future__ import annotations
 
@@ -21,6 +25,7 @@ from pathlib import Path
 from export_from_tags import line_map
 
 here = Path(__file__).resolve().parent
+RETRIES = 2
 
 
 def main() -> int:
@@ -42,6 +47,14 @@ def main() -> int:
         report = json.loads((args.out / "migration-report.json").read_text())
         mods = ["LinearAlgebraDoneRightLean.Sources"] + [f.removesuffix(".lean").replace("/", ".") for f in report["files"]]
         build = subprocess.run(["lake", "build", *mods], cwd=args.tagged, capture_output=True, text=True)
+        for _ in range(RETRIES):
+            if build.returncode == 0:
+                break
+            failed = build
+            build = subprocess.run(["lake", "build", *mods], cwd=args.tagged, capture_output=True, text=True)
+            if build.returncode == 0:
+                first = re.search(r"error: (LinearAlgebraDoneRightLean/.*)", failed.stdout + failed.stderr)
+                print(f"round {round_}: a build failed and the next passed: {first.group(1) if first else 'no error named'}")
         wrappers = [f for f in report["step_forms"] if f["form"] in ("tactic", "term", "command", "statement")]
         new: list[dict] = []
         if build.returncode != 0:

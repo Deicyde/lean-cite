@@ -70,7 +70,8 @@ def main() -> int:
         row["seconds"] = round(time.time() - t0)
         summary[n] = row
         (args.out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1) + "\n")
-        print(n, {k: row.get(k) for k in ("forms", "compare", "seconds")}, flush=True)
+        print(n, {k: row.get(k) for k in ("forms", "compare", "seconds")},
+              {"demoted": len(row.get("demoted", []))}, flush=True)
     return 0
 
 

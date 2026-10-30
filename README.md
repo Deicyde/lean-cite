@@ -26,7 +26,9 @@ the book's side, such as where each passage is on the page, from the companion a
 reproduced the companion's annotations, apart from `provenance.method`, which records where each
 link came from, and one of the 1,561 proof-step ranges, which loses a line. On chapter 1, this
 package's `cite_ll.py` also reproduced the Lean side of all 264 of the companion's links. See
-[`examples/ladr`](examples/ladr/README.md).
+[`examples/ladr`](examples/ladr/README.md). To try it, the tagged chapter is in
+[Deicyde/linear-algebra-done-right-lean-cite](https://github.com/Deicyde/linear-algebra-done-right-lean-cite),
+also private; [`examples/ladr`](examples/ladr/README.md#try-it) says how to build it.
 
 ## Terms
 
@@ -72,6 +74,8 @@ Literature Links annotations (.jsonl) → viewers and other tools
    ```
 
    or, in `lakefile.lean`, `require cite from "../lean-cite"`. Then run `lake update cite`.
+   To fetch it instead, use `git = "https://github.com/Deicyde/lean-cite"` and a `rev` in place of
+   `path`; git then needs credentials that can read the repository.
    `import Cite` makes `cite` a keyword in the importing file; write `«cite»` for an identifier of
    that name.
 
@@ -163,8 +167,9 @@ A step is marked by wrapping the Lean that carries it out:
 
 - A relation can end the head (`step 2 closeMatch =>`), or go in `(rel := closeMatch)` before a
   declaration.
-- A wrapper leaves the proof term unchanged. The tactics in a tactic wrapper are indented under
-  it, so wrapping a block shifts its lines.
+- A wrapper leaves the proof term unchanged, apart from the numbers inside inaccessible names, and
+  the position a `sorry` records if the wrapper moves it. The tactics in a tactic wrapper are
+  indented under it, so wrapping a block shifts its lines.
 - Steps of one entry with one relation can share a wrapper: `step 2 4`. Other steps carried out by
   the same lines take wrappers nested directly inside each other, which all mark the innermost
   body.
@@ -297,7 +302,7 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
 | `Cite/StepSyntax.lean` | the tactic and term wrappers, and `linter.cite.wrappers` |
 | `Cite/Steps.lean` | the comment markers: their scanner and `linter.cite.steps` |
 | `Cite/Export.lean` | `#cite_export`, and the reader of Mathlib's cross-references |
-| `CiteTest/` | the tests: `lake build CiteTest`. `scan_cases.json` is the scanner's corpus; `Mathlib/` has a copy of each layout of Mathlib's cross-reference API |
+| `CiteTest/` | the tests: `lake build CiteTest`. `scan_cases.json` is the scanner's corpus; `Mathlib/` has a copy of each layout of Mathlib's cross-reference API; `SameTerm.lean` checks that a wrapper leaves the proof term unchanged |
 | `scripts/cite_ll.py` | the converter to Literature Links |
 | `examples/ladr/` | the test on *Linear Algebra Done Right*: the scripts that tag it and check the tags against its annotations, and their outputs. `test_cite_scan.py` and `test_cite_ll.py` need nothing outside this repository |
 | `.github/workflows/ci.yml` | CI: `lake build Cite CiteTest`, then both Python tests |
