@@ -2,8 +2,8 @@
 
 Write, in the Lean source, which passage of a book, paper or database each declaration and each
 proof step formalizes. Export those links as
-[Literature Links](https://github.com/mathlib-initiative/literature-links) annotations. That
-repository is private for now, so its link 404s without access; [Terms](#terms) has the basics.
+[Literature Links](https://github.com/mathlib-initiative/literature-links) annotations;
+[Terms](#terms) has the basics.
 
 ```lean
 @[cite ladr4e "3.21"]                       -- this theorem is item 3.21 of the book
