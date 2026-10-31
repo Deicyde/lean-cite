@@ -76,6 +76,8 @@ def item_of(target: tuple) -> str:
 
 
 def in_chapter(item: str, chapter: str) -> bool:
+    if chapter == "all":
+        return True
     if item.startswith("Exercise "):
         return re.match(rf"{chapter}[A-F]?\.", item.removeprefix("Exercise ")) is not None
     return item.split(".")[0] == chapter
@@ -202,7 +204,7 @@ def main() -> int:
     ap.add_argument("--companion", type=Path, required=True)
     ap.add_argument("--original", type=Path, required=True)
     ap.add_argument("--tagged", type=Path, required=True)
-    ap.add_argument("--chapter", default="1")
+    ap.add_argument("--chapter", default="1", help="a chapter's number, or all")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--steps", choices=("comments", "wrappers"), default="comments",
                     help="mark proof steps with comment markers, or with wrappers where the syntax allows")
@@ -216,7 +218,7 @@ def main() -> int:
     lean = [ea.parse_lean(args.original, rel) for rel in files]
     _, external, *_ = ea.apply_overrides(lean, args.companion / "scripts" / "annotation_overrides.json")
     by_path = {lf.path: lf for lf in lean}
-    chapter_files = {lf.path for lf in lean if lf.section.startswith(args.chapter) and lf.section[len(args.chapter):] in ("", "A", "B", "C", "D", "E", "F")}
+    chapter_files = {lf.path for lf in lean if args.chapter == "all" or (lf.section.startswith(args.chapter) and lf.section[len(args.chapter):] in ("", "A", "B", "C", "D", "E", "F"))}
 
     # (file, keyword line) -> [cite arguments]; anonymous ones are wrapped, named ones tagged
     tags: dict[tuple[str, int], list[str]] = collections.defaultdict(list)

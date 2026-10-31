@@ -7,8 +7,9 @@ its formalization that are now kept outside the Lean?
 
 - **The formalization** is Rado Kirov's rkirov/linear-algebra-done-right-lean, at `94a528c`, which
   Rado's README calls a Lean companion to Axler's book.
-- **The companion**, in this file, is Deicyde/linear-algebra-done-right-companion, which links the
-  two. That repository's own README uses the word for Rado's Lean. The companion's exporter writes
+- **The companion**, in this file, is Deicyde/linear-algebra-done-right-companion at its tag
+  `cite-demo-pin`, which links the two at `94a528c`. That repository's own README uses the word for
+  Rado's Lean, and its `main` will move on to newer commits of Rado's. The companion's exporter writes
   `annotations/`, 3,675 [Literature Links](../../README.md#terms) files:
   - one for each pair of an item or exercise and a Lean declaration that formalizes it (2,459), so
     an item formalized by several declarations has several files;
@@ -58,9 +59,9 @@ compares the result with the companion's.
 | Run | Steps marked by | Regenerated annotations |
 |---|---|---|
 | chapter 1 | comment markers | identical, apart from `provenance.method` |
-| chapter 1 | wrappers, and comments where no wrapper fits | identical, apart from `provenance.method` |
-| each chapter, 1 to 9 | wrappers, and comments where no wrapper fits | identical, apart from `provenance.method`, except one of the 1,561 step ranges |
-| each chapter, 1 to 9 | comment markers alone | not run through Lean; `migrate.py`'s scanner finds that 67 of the 1,561 ranges would come back with other lines (0, 2, 8, 4, 16, 5, 16, 4 and 12 by chapter) |
+| chapter 1 | wrappers, and comments where `migrate.py` places no wrapper | identical, apart from `provenance.method` |
+| each chapter, 1 to 9 | wrappers, and comments where `migrate.py` places no wrapper | identical, apart from `provenance.method`, except one of the 1,561 step ranges |
+| each chapter, 1 to 9 | comment markers alone | not exported through Lean (only `Section_9C` was compiled in this form, for [the failure table](#intermittent-build-failures)); `migrate.py`'s scanner finds that 67 of the 1,561 ranges would come back with other lines (0, 2, 8, 4, 16, 5, 16, 4 and 12 by chapter), and 74 with every chapter in one tree (`--chapter all`) |
 
 - `provenance.method` records how the exporter made an item's or exercise's link: `convention`
   from Rado's conventions, `curation` or `audit` from an override. The chapter's item links now
@@ -73,7 +74,8 @@ compares the result with the companion's.
   chapter did it turn one. A failed build is run again before a wrapper is blamed; see
   [Intermittent build failures](#intermittent-build-failures).
 - `migrate.py` rewrites each file it touches from the untagged one, so each chapter was tagged
-  alone, in a copy reset to the untagged files. The whole book has never been tagged in one branch.
+  alone, in a copy reset to the untagged files. The whole book has never been built with its tags in
+  one branch; `--chapter all` writes them, for the scanner's count above.
 - On chapter 1, the package's own converter `cite_ll.py` also reproduces the Lean side of all 264
   of the companion's links (233 for items and exercises, 31 for proof steps). Ten deliberate
   mutations of chapter 1's exported tags are each caught.
@@ -105,12 +107,14 @@ and `gh auth setup-git`, for one).
 ```sh
 git clone https://github.com/Deicyde/linear-algebra-done-right-lean-cite
 cd linear-algebra-done-right-lean-cite
-git checkout comment-markers    # or wrappers
+git checkout comment-markers
 lake exe cache get && lake build && lake env lean CiteExport.lean
 python3 .lake/packages/cite/scripts/cite_ll.py cite-export.json \
   --project https://github.com/Deicyde/linear-algebra-done-right-lean-cite \
   --commit "$(git rev-parse HEAD)" --mathlib-commit 5450b53e5ddc75d46418fabb605edbf36bd0beb6 --out links
 ```
+
+For the other form, run `git checkout wrappers` and the commands after it again.
 
 `CiteExport.lean` writes what the tags say to `cite-export.json`, and `cite_ll.py` turns that into
 Literature Links. Without the book's layout, each link's subject is the whole PDF, titled with the
@@ -280,7 +284,9 @@ commands and 20 are statements. `migrate.py` marks the rest with comments:
 
 The one difference is one of the two ranges of 5.34 step 1. It is the statement and the first line
 of the proof, and a range of step 3 is that line and the next. The two ranges cross, and both need
-comments; comment ranges cannot cross, so step 1's range loses its last line.
+comments; comment ranges cannot cross, so step 1's range loses its last line. With every chapter in
+one tree (`--chapter all --steps wrappers`, not run through Lean), the scanner finds that same range
+as the only loss, with 310 comments.
 
 ## Intermittent build failures
 
@@ -303,16 +309,26 @@ Here it shows as `elaboration function for 'Matrix.«term_ᴴ»' has not been im
 | upstream's reproducer, with neither Mathlib nor this package | 61 of 200 |
 | the same, on v4.36.0-rc1 | 123 of 200 |
 | the same, on v4.36.0-rc2, which has the fix | 0 of 300 |
-| `Section_9C` tagged, with wrappers or comment markers | 9 of 910 |
+| `Section_9C` tagged, with wrappers or comment markers | 5 of 210 |
+| the same with comment markers, and probes added to the file | 4 of 700 |
 | `Section_9C` with comment markers and `-DElab.async=false` | 0 of 150 |
 | `Section_9C` untagged | 0 of 180 |
 
-At about 1 in 100, 0 of 180 does not show that the untagged file is safe; it would happen about
-one time in six. The failure has also hit Rado's own Pages deploys, in builds with no lean-cite at
-all: `e16d6df` at these same lines of `Section_9C`, and apparently `682a386` in `Section_7D`, as
+5 of 210 against 0 of 180 does not settle whether tags make the failure more frequent. If the two
+files had one rate, all 5 failures would land on the tagged one about one time in 23, and the file
+with probes failed less often than the plain tagged one, so these rates are not stable. Nor does
+0 of 180 show that the untagged file is safe. The failure has also hit Rado's own Pages deploys, in builds with no lean-cite at
+all: `e16d6df` at lines 512 and 513 of `Section_9C`, and apparently `682a386` in `Section_7D`, as
 `failed to synthesize` for `LT 𝕜` and `PartialOrder 𝕜` under `open scoped ComplexOrder in`. Lean
-Action CI passed on both commits. It hit `Section_9C` here too during literate builds on the
-`comment-markers` branch, where that file has no tags but still imports `Cite` through `Sources`.
+Action CI passed on both commits. Those are 2 of the 34 Pages deploys since `open scoped Matrix in`
+entered `Section_9C` on 2026-08-01; a third failure, `66333e1`, also failed Lean Action CI, so it is
+something else.
+
+Of the four literate builds run here, two failed in `Section_9C`, both on the `comment-markers`
+branch, where that file has no tags but still imports `Cite` through `Sources`. One kept its message,
+at the same two lines; the other's was overwritten. The next build on that branch passed, as did the
+one on `wrappers`. No untagged literate build has run here, so these four do not compare the two.
+
 In a failing run, a probe found the list empty (0 extensions, against 145) even though Lean had
 elaborated the `section` and the `open`. The tags do not touch this list.
 
@@ -335,14 +351,16 @@ binder names included:
 A `sorry` records the line and column it is written on, so any edit that moves it changes the term,
 comments included. The 8 differ in the numbers inside inaccessible names such as
 `h._@…_hygCtx.87`, because a wrapper uses up macro scopes. `CiteTest/SameTerm.lean` checks each form
-of wrapper against a plain twin on every build.
+of wrapper against a plain twin on every build. [Reproduce](#reproduce) has the commands for the
+table.
 
 `example`s and `recall`s leave no constants, so these are not compared; the tags go in front of
 them, and no wrapper goes inside one.
 
 The tags do show on Rado's literate site. `lake query :literateHtml` builds on both branches, and the
 pages show the `@[cite …]` attributes along with `-- cite …` lines or `cite … =>` heads, which take
-up about one line per tag or step mark.
+up about one line per tag or step mark. A `Sources` page, from `Sources.lean`, also joins the
+sidebar.
 
 ## What the tags carry, and what they do not
 
@@ -362,15 +380,16 @@ The book's side stays outside the Lean:
 
 ## Reproduce
 
-`L` below is the directory on the machine where this ran; set it to your own. It holds:
+`L` below is the directory that holds these checkouts. The block takes it to be the one above this
+repository; if yours are elsewhere, set it yourself. It holds:
 
-- `linear-algebra-done-right-companion`, the companion, with the PDF build its annotations pin at
-  `.lake/overlay-pdf/axler-ladr-4e.pdf` (sha256 `2c79b287…63ec`, 2,795,184 bytes) and the literate
+- `linear-algebra-done-right-companion`, the companion, checked out at its tag `cite-demo-pin`, with
+  the PDF build its annotations pin at `.lake/overlay-pdf/axler-ladr-4e.pdf` (sha256 `2c79b287…63ec`, 2,795,184 bytes) and the literate
   site of `94a528c` at `.lake/verso`. Since 2026-10-30 Axler's URL serves a later build, so ask Jack
   for this one. The exporter writes the PDF's hash and size into `_defaults.json`, so with another
   build `compare.py` reports at least that file. Rado's live site is also past `94a528c`, so build
-  the site at that commit with `lake query :literateHtml`. The exporter calls poppler's `pdftotext`
-  and `pdftocairo`.
+  the site at that commit with `lake query :literateHtml` and copy the folder it prints to
+  `.lake/verso`. The exporter calls poppler's `pdftotext` and `pdftocairo`.
 - `linear-algebra-done-right-lean-litlinks`, the untagged checkout: Rado's repository at `94a528c`,
   the `--original` of every script, with Mathlib's sources at `.lake/packages/mathlib`, which need
   not be built.
@@ -399,17 +418,20 @@ python3 compare.py $L/linear-algebra-done-right-companion/annotations out/annota
   --json out/compare.json
 python3 layout_from_annotations.py $L/linear-algebra-done-right-companion/annotations ladr4e > out/layout.json
 python3 ../../scripts/cite_ll.py out/dump.json --project https://github.com/rkirov/linear-algebra-done-right-lean \
-  --commit <cite-prototype's commit> --mathlib-commit 5450b53e5ddc75d46418fabb605edbf36bd0beb6 \
+  --commit "$(git -C $L/linear-algebra-done-right-lean-cite rev-parse HEAD)" \
+  --mathlib-commit 5450b53e5ddc75d46418fabb605edbf36bd0beb6 \
   --layout out/layout.json --strict --out out/generic
 python3 compare_links.py out/generic/ladr4e.jsonl $L/linear-algebra-done-right-companion/annotations \
   $L/linear-algebra-done-right-lean-litlinks $L/linear-algebra-done-right-lean-cite 1
 python3 mutate.py $L/linear-algebra-done-right-companion $L/linear-algebra-done-right-lean-litlinks \
-  $L/linear-algebra-done-right-lean-cite <a scratch directory>
-python3 test_cite_scan.py   # after `lake build CiteTest` in the package
-python3 test_cite_ll.py     # cite_ll.py on out/dump.json, with the layout read back from out/generic
+  $L/linear-algebra-done-right-lean-cite "$(mktemp -d)"
+python3 test_cite_scan.py
+python3 test_cite_ll.py
 ```
 
-`migrate.py` rewrites the tagged files from the untagged ones, so rerunning it discards hand edits.
+`test_cite_scan.py` needs `lake build CiteTest` in the package first. `test_cite_ll.py` runs
+`cite_ll.py` on `out/dump.json`, with the layout read back from `out/generic`. `migrate.py` rewrites
+the tagged files from the untagged ones, so rerunning it discards hand edits.
 
 Wrappers, chapter 1: in place of `migrate.py` and the `lake` line, run
 
@@ -420,8 +442,8 @@ python3 wrap_chapter.py --companion $L/linear-algebra-done-right-companion \
 ```
 
 which builds and writes `out/wrappers/dump.json` itself. Then run the other commands with
-`out/wrappers/` in place of `out/`, `$L/linear-algebra-done-right-lean-cite-wrappers` in place of
-the tagged worktree, and `cite-prototype-wrappers`'s commit for `--commit`; give `mutate.py` the
+`out/wrappers/` in place of `out/`, and `$L/linear-algebra-done-right-lean-cite-wrappers` in place of
+the tagged worktree, which also sets `--commit`; give `mutate.py` the
 dump `out/wrappers/dump.json` as its last argument.
 
 The whole book: run `all_chapters.py` with the same `--companion` and `--original`, a `--tagged`
@@ -430,6 +452,20 @@ copy of the wrappers worktree without `.git` in a directory that also holds this
 `out/all-chapters-summary.json` gathers the rows of two such runs, without the per-chapter pass
 flags: chapters 1 to 8 from one, and chapter 9 from a rerun (see
 [Intermittent build failures](#intermittent-build-failures)).
+
+The term table: in a clone of the demo, after `lake exe cache get`, on each of `main`, `comment-markers` and `wrappers` in turn,
+with `$B` as the branch and `$E` as this directory, run
+
+```sh
+lake build LinearAlgebraDoneRightLean.Section_1A LinearAlgebraDoneRightLean.Section_1B LinearAlgebraDoneRightLean.Section_1C LinearAlgebraDoneRightLean.Section_6A &&
+TERMS_OUT=$B.tsv lake env lean $E/DumpTerms.lean
+```
+
+and then `python3 $E/compare_terms.py main.tsv comment-markers.tsv wrappers.tsv`.
+
+The failure table: its `Section_9C` rows ran Lean as `sample_build.sh` does, in a built checkout, at
+most three at a time. Upstream's reproducer is in
+[its issue](https://github.com/leanprover/lean4/issues/15817).
 
 ## Files
 
@@ -446,3 +482,6 @@ flags: chapters 1 to 8 from one, and chapter 9 from a rerun (see
 | `cite_scan.py` | the step-comment scanner of `Cite/Steps.lean`, in Python, for placing markers |
 | `test_cite_scan.py` | checks `cite_scan.py` against the Lean scanner on the package's corpus |
 | `test_cite_ll.py` | checks `cite_ll.py` on the committed chapter 1 dump, with no checkout but this one |
+| `DumpTerms.lean` | writes each constant of the files chapter 1's tags touch, with its whole type and value |
+| `compare_terms.py` | classifies how those constants differ between builds |
+| `sample_build.sh` | runs Lean on one module N times, as Lake runs it, and counts the failures |
