@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write Literature Links 2.0 annotations from what `#cite_export` read out of a Lean project.
+"""Write Literature Links 1.0 annotations from what `#cite_export` read out of a Lean project.
 
     cite_ll.py dump.json --project <repository URL> --commit <sha> --out <dir>
         [--mathlib-commit <sha>] [--lean-repo <module prefix>=<repository URL>@<sha> …]
