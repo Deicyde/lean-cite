@@ -1,0 +1,167 @@
+From 48a2cb959d3570c2a51877e6d6b8f8cbb794d8a0 Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 04:31:47 -0400
+Subject: [PATCH] fix: keep docstring text written before elaboration
+
+An attribute with application time `beforeElaboration` is the only attribute that runs before a
+theorem's asynchronous fork, so it is the only one whose docstring write the theorem's own branch can
+see. The declaration's docstring then replaced that text. It now puts its text first.
+
+Local prototype A for the Mathlib cross-reference attributes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/Lean/DocString/Add.lean           | 22 +++++--
+ tests/elab/docStringKeepsEarlier.lean | 92 +++++++++++++++++++++++++++
+ 2 files changed, 108 insertions(+), 6 deletions(-)
+ create mode 100644 tests/elab/docStringKeepsEarlier.lean
+
+diff --git a/src/Lean/DocString/Add.lean b/src/Lean/DocString/Add.lean
+index 8662ec5eec..dda7d16410 100644
+--- a/src/Lean/DocString/Add.lean
++++ b/src/Lean/DocString/Add.lean
+@@ -358,10 +358,15 @@ def addMarkdownDocString
+   unless (← getEnv).getModuleIdxFor? declName |>.isNone do
+     throwError m!"invalid doc string, declaration `{.ofConstName declName}` is in an imported module"
+   validateDocComment docComment
+-  let docString : String ← getDocStringText docComment
+-  -- replacing, as attributes applied before elaboration may already have written one
++  let docString := (← getDocStringText docComment).removeLeadingSpaces
+   modifyEnv fun env =>
+-    docStringExt.insert env declName docString.removeLeadingSpaces (allowOverwrite := true)
++    -- Attributes applied before elaboration may already have written text about this declaration,
++    -- such as a cross-reference link. That text is visible on every branch and follows the
++    -- declaration's own docstring. Only `.local` state is read, so this never blocks.
++    let docString := match docStringExt.find? (asyncMode := .local) env declName with
++      | some earlier => docString ++ "\n\n" ++ earlier
++      | none => docString
++    docStringExt.insert env declName docString (allowOverwrite := true)
+ 
+ /--
+ Adds an elaborated Verso docstring to the environment, recording its `deferred` checks under this
+@@ -376,7 +381,7 @@ def addVersoDocStringCore [Monad m] [MonadEnv m] [MonadLiftT BaseIO m] [MonadErr
+   unless (← getEnv).getModuleIdxFor? declName |>.isNone do
+     throwError s!"invalid doc string, declaration '{declName}' is in an imported module"
+   modifyEnv fun env =>
+-    -- replacing, as for `addMarkdownDocString`
++    -- replacing, as for `addDocStringCore`
+     let env := versoDocStringExt.insert env declName docs (allowOverwrite := true)
+     deferred.foldl (init := env) fun env c =>
+       Doc.deferredCheckExt.addEntry env { c with site := .decl declName }
+@@ -411,8 +416,13 @@ def addVersoDocString
+     TermElabM Unit := do
+   unless (← getEnv).getModuleIdxFor? declName |>.isNone do
+     throwError s!"invalid doc string, declaration '{declName}' is in an imported module"
+-  let { toVersoDocString, deferredChecks } ← versoDocString declName binders docComment
+-  addVersoDocStringCore declName toVersoDocString deferredChecks
++  let { toVersoDocString := docs, deferredChecks } ← versoDocString declName binders docComment
++  -- Keep text written before elaboration, as in `addMarkdownDocString`.
++  let docs := match versoDocStringExt.find? (asyncMode := .local) (← getEnv) declName with
++    | some earlier =>
++      { text := docs.text ++ earlier.text, subsections := docs.subsections ++ earlier.subsections }
++    | none => docs
++  addVersoDocStringCore declName docs deferredChecks
+ 
+ /--
+ Adds a Verso docstring to the environment from a string value, which disables the interactive
+diff --git a/tests/elab/docStringKeepsEarlier.lean b/tests/elab/docStringKeepsEarlier.lean
+new file mode 100644
+index 0000000000..3efc7fb7aa
+--- /dev/null
++++ b/tests/elab/docStringKeepsEarlier.lean
+@@ -0,0 +1,92 @@
++import Lean
++
++/-!
++Text written about a declaration before it is elaborated, as an attribute with application time
++`beforeElaboration` does, follows the declaration's own docstring. This must also hold for a theorem
++elaborated asynchronously, whose docstring is written on the theorem's own branch.
++-/
++
++open Lean Elab Command
++
++set_option Elab.async true
++
++def showDoc (n : Name) : CommandElabM Unit := do
++  logInfo m!"{repr (← findDocString? (← getEnv) n)}"
++
++run_cmd addDocStringCore `thmDoc "earlier"
++/-- own -/
++theorem thmDoc : True := .intro
++
++/-- info: some "own\n\nearlier" -/
++#guard_msgs in
++run_cmd showDoc ``thmDoc
++
++run_cmd addDocStringCore `thmUndoc "earlier"
++theorem thmUndoc : True := .intro
++
++/-- info: some "earlier" -/
++#guard_msgs in
++run_cmd showDoc ``thmUndoc
++
++run_cmd addDocStringCore `defDoc "earlier"
++/-- own -/
++def defDoc : Nat := 0
++
++/-- info: some "own\n\nearlier" -/
++#guard_msgs in
++run_cmd showDoc ``defDoc
++
++run_cmd addDocStringCore `structDoc "earlier"
++/-- own -/
++structure structDoc where
++
++/-- info: some "own\n\nearlier" -/
++#guard_msgs in
++run_cmd showDoc ``structDoc
++
++/-! A recursive definition is added in several steps, and must not repeat its docstring. -/
++
++run_cmd addDocStringCore `recDoc "earlier"
++/-- own -/
++def recDoc : Nat → Nat
++  | 0 => 0
++  | n + 1 => recDoc n
++
++/-- info: some "own\n\nearlier" -/
++#guard_msgs in
++run_cmd showDoc ``recDoc
++
++/-! Writing a docstring through `addDocStringCore` still replaces, for metaprograms that read and
++rewrite it. -/
++
++/-- own -/
++def replaced : Nat := 0
++
++run_cmd addDocStringCore ``replaced "new"
++
++/-- info: some "new" -/
++#guard_msgs in
++run_cmd showDoc ``replaced
++
++/-! Verso -/
++
++def earlierVerso : VersoDocString :=
++  { text := #[.para #[.text "earlier"]], subsections := #[] }
++
++set_option doc.verso true
++
++run_cmd addVersoDocStringCore `versoThm earlierVerso #[]
++/-- own -/
++theorem versoThm : True := .intro
++
++/-- info: some "own \n\nearlier" -/
++#guard_msgs in
++run_cmd showDoc ``versoThm
++
++run_cmd addVersoDocStringCore `versoDef earlierVerso #[]
++/-- own -/
++def versoDef : Nat := 0
++
++/-- info: some "own \n\nearlier" -/
++#guard_msgs in
++run_cmd showDoc ``versoDef
+-- 
+2.48.1
+

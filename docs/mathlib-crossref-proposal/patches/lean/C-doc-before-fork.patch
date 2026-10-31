@@ -1,0 +1,142 @@
+From f69870b950e51cb17b572b2ac70b0aa9cc27648e Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 12:31:04 -0400
+Subject: [PATCH 1/2] feat: write theorem docstrings on the main branch
+
+Local prototype C for the Mathlib cross-reference attributes, which then run after compilation and read and extend the docstring as they do for definitions. A Verso docstring on a theorem waits for the theorem's proof, through Environment.constants in DocM.exec. Writing it before the proof's task starts deadlocks.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/Lean/DocString/Extension.lean | 2 --
+ src/Lean/Elab/MutualDef.lean      | 8 +++++++-
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/src/Lean/DocString/Extension.lean b/src/Lean/DocString/Extension.lean
+index 44331b3cf3..b725716239 100644
+--- a/src/Lean/DocString/Extension.lean
++++ b/src/Lean/DocString/Extension.lean
+@@ -126,7 +126,6 @@ register_builtin_option doc.verso.module : Bool := {
+ private builtin_initialize builtinDocStrings : IO.Ref (NameMap String) ← IO.mkRef {}
+ builtin_initialize docStringExt : MapDeclarationExtension String ←
+   mkMapDeclarationExtension
+-    (asyncMode := .async .asyncEnv)
+     (exportEntriesFn := fun _ s =>
+       let ents := s.toArray
+       { exported := #[], server := ents, «private» := ents })
+@@ -138,7 +137,6 @@ private builtin_initialize inheritDocStringExt : MapDeclarationExtension Name 
+ private builtin_initialize builtinVersoDocStrings : IO.Ref (NameMap VersoDocString) ← IO.mkRef {}
+ builtin_initialize versoDocStringExt : MapDeclarationExtension VersoDocString ←
+   mkMapDeclarationExtension
+-    (asyncMode := .async .asyncEnv)
+     (exportEntriesFn := fun _ s =>
+       let ents := s.toArray
+       { exported := #[], server := ents, «private» := ents })
+diff --git a/src/Lean/Elab/MutualDef.lean b/src/Lean/Elab/MutualDef.lean
+index 697b30d7fe..717846d22e 100644
+--- a/src/Lean/Elab/MutualDef.lean
++++ b/src/Lean/Elab/MutualDef.lean
+@@ -1304,7 +1304,8 @@ this warning can be disabled with `set_option warn.classDefReducibility false`."
+     -- attributes should be applied on the main thread; see below
+     -- save before clearing so the deprecation-silencing wrap below can still see `@[deprecated]`
+     let oldAttrs := header.modifiers.attrs
+-    let header := { header with modifiers.attrs := #[] }
++    let doc? := header.modifiers.docString?
++    let header := { header with modifiers.attrs := #[], modifiers.docString? := none }
+ 
+     -- insert a hole for the proof info trees in the main info tree
+     let infoHole ← mkFreshMVarId
+@@ -1341,6 +1342,11 @@ this warning can be disabled with `set_option warn.classDefReducibility false`."
+     Core.logSnapshotTask { stx? := none, cancelTk? := none, task := (← getEnv).checked.map fun _ =>
+       default
+     }
++    -- A theorem's docstring does not depend on its proof. Writing it on the main branch lets
++    -- attributes read and extend it. This must follow starting the task above: a Verso docstring
++    -- elaborates through `Environment.constants`, which waits for that task.
++    if let some doc := doc? then
++      addDocString header.declName header.binders doc
+     withDeprecationContextFromAttrs view.modifiers.attrs do
+       applyAttributesAt declId.declName view.modifiers.attrs .afterTypeChecking
+       applyAttributesAt declId.declName view.modifiers.attrs .afterCompilation
+-- 
+2.48.1
+
+
+From d0d378fbda54b2f5e3645a6491eaae69a9b53109 Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 22:17:56 -0400
+Subject: [PATCH 2/2] fix: do not wait for a declaration's proof to elaborate
+ its Verso docstring
+
+DocM.exec needs only the signature. Reading it through Environment.constants waits for all earlier branches, which with the previous commit serializes Verso-documented theorems (20 theorems with 1 s proofs: 3.4 s before that commit, 22.7 s with it, 4.5 s with this one).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/Lean/Elab/DocString.lean        |  3 ++-
+ tests/elab/docStringMainBranch.lean | 41 +++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+), 1 deletion(-)
+ create mode 100644 tests/elab/docStringMainBranch.lean
+
+diff --git a/src/Lean/Elab/DocString.lean b/src/Lean/Elab/DocString.lean
+index 9c03d20271..60dcf46853 100644
+--- a/src/Lean/Elab/DocString.lean
++++ b/src/Lean/Elab/DocString.lean
+@@ -231,7 +231,8 @@ environment.
+ def DocM.exec (declName : Name) (binders : Syntax) (act : DocM α)
+     (suggestionMode : SuggestionMode := .interactive) :
+     TermElabM (α × Array DeferredCheck) := withoutModifyingEnv do
+-  let some ci := (← getEnv).constants.find? declName
++  -- only the signature is needed, so do not wait for the declaration's proof
++  let some ci := (← getEnv).findConstVal? declName
+     | throwError "Unknown constant {declName} when building docstring"
+   withSaveRestoreTermState do
+     let (lctx, localInstances) ← buildContext ci.type binders
+diff --git a/tests/elab/docStringMainBranch.lean b/tests/elab/docStringMainBranch.lean
+new file mode 100644
+index 0000000000..bb81c6bcf1
+--- /dev/null
++++ b/tests/elab/docStringMainBranch.lean
+@@ -0,0 +1,41 @@
++import Lean
++
++/-!
++A theorem's docstring is written on the main branch, so a later command or attribute can read and
++extend it, and the file that declares the theorem sees the result.
++-/
++
++open Lean Elab Command
++
++set_option Elab.async true
++
++/-- own -/
++theorem thm : True := .intro
++
++/-- Appends to a docstring, as cross-reference attributes do. -/
++def extendDoc (n : Name) : CommandElabM Unit := do
++  let doc := (← findDocString? (← getEnv) n).getD ""
++  addDocStringCore n s!"{doc}\n\nlink"
++
++run_cmd extendDoc ``thm
++
++/-- info: some "own\n\nlink" -/
++#guard_msgs in
++run_cmd logInfo m!"{repr (← findDocString? (← getEnv) ``thm)}"
++
++theorem undoc : True := .intro
++
++run_cmd addDocStringCore ``undoc "link"
++
++/-- info: some "link" -/
++#guard_msgs in
++run_cmd logInfo m!"{repr (← findDocString? (← getEnv) ``undoc)}"
++
++set_option doc.verso true
++
++/-- Uses {name}`thm`. -/
++theorem versoThm : True := .intro
++
++/-- info: some "Uses `thm`. " -/
++#guard_msgs in
++run_cmd logInfo m!"{repr (← findDocString? (← getEnv) ``versoThm)}"
+-- 
+2.48.1
+

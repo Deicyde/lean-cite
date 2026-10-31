@@ -1,0 +1,71 @@
+From 5391e99f85fdef8c52c6208d41667f4bda6a1bca Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 12:31:04 -0400
+Subject: [PATCH] feat: text shown after a docstring, kept apart from it
+
+Local prototype B for the Mathlib cross-reference attributes. doc-gen4 reads Verso docstrings through findInternalDocString?, so its Verso and undocumented paths would need the same text.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/Lean/DocString.lean           |  9 ++++++---
+ src/Lean/DocString/Extension.lean | 24 ++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+), 3 deletions(-)
+
+diff --git a/src/Lean/DocString.lean b/src/Lean/DocString.lean
+index cc15f7226f..a17fc09488 100644
+--- a/src/Lean/DocString.lean
++++ b/src/Lean/DocString.lean
+@@ -38,9 +38,12 @@ def findDocString? (env : Environment) (declName : Name) (includeBuiltin := true
+   let declName := alternativeOfTactic env declName |>.getD declName
+   let exts := getTacticExtensionString env declName
+   let spellings := getRecommendedSpellingString env declName
+-  let str := (← findSimpleDocString? env declName (includeBuiltin := includeBuiltin)
+-      (options := options) (currNamespace := currNamespace) (openDecls := openDecls)).map
+-    (· ++ exts ++ spellings)
++  let doc? ← findSimpleDocString? env declName (includeBuiltin := includeBuiltin)
++    (options := options) (currNamespace := currNamespace) (openDecls := openDecls)
++  let doc? := (getDocStringSuffixes env declName).foldl (init := doc?) fun
++    | some doc, text => some (doc ++ "\n\n" ++ text)
++    | none, text => some text
++  let str := doc?.map (· ++ exts ++ spellings)
+   str.mapM (rewriteManualLinks ·)
+ 
+ /--
+diff --git a/src/Lean/DocString/Extension.lean b/src/Lean/DocString/Extension.lean
+index 44331b3cf3..4e0f336b01 100644
+--- a/src/Lean/DocString/Extension.lean
++++ b/src/Lean/DocString/Extension.lean
+@@ -174,6 +174,30 @@ def throwIfHasDocString [Monad m] [MonadError m] [MonadEnv m] (declName : Name)
+       versoDocStringExt.contains (asyncMode := .local) env declName then
+     throwError m!"invalid doc string, declaration `{.ofConstName declName}` already has one"
+ 
++/--
++Text shown after a declaration's docstring, such as a link to an external database. Kept apart from
++the docstring because the branch that writes a theorem's docstring cannot see attributes applied
++after it forks, and the attributes' branch cannot see the docstring. Written on the main branch, so
++reading it never waits for a proof.
++-/
++builtin_initialize docStringSuffixExt : MapDeclarationExtension (Array String) ←
++  mkMapDeclarationExtension (exportEntriesFn := fun _ s =>
++    let ents := s.toArray
++    { exported := #[], server := ents, «private» := ents })
++
++/-- Adds Markdown text to show after the docstring of `declName`, even if it has none. -/
++def addDocStringSuffix [Monad m] [MonadError m] [MonadEnv m] (declName : Name) (text : String) :
++    m Unit := do
++  unless (← getEnv).getModuleIdxFor? declName |>.isNone do
++    throwError m!"invalid doc string, declaration `{.ofConstName declName}` is in an imported module"
++  modifyEnv fun env =>
++    let texts := (docStringSuffixExt.find? (asyncMode := .local) env declName).getD #[]
++    docStringSuffixExt.insert env declName (texts.push text) (allowOverwrite := true)
++
++/-- The text added by `addDocStringSuffix`, oldest first. -/
++def getDocStringSuffixes (env : Environment) (declName : Name) : Array String :=
++  (docStringSuffixExt.find? (level := .server) env declName).getD #[]
++
+ /--
+ Sets the docstring of `declName`, replacing an existing one: metaprograms extend docstrings this way
+ (e.g. by appending cross-reference links). Only `add_decl_doc` rejects a second docstring.
+-- 
+2.48.1
+

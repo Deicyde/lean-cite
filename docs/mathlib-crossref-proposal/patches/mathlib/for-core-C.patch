@@ -1,0 +1,153 @@
+From 8c05a2195b69a8f64994aa23849e5c2689075fa0 Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 12:31:04 -0400
+Subject: [PATCH 1/2] chore(Tactic/CrossRefAttribute): run after compilation
+
+Local prototype; needs Lean branch crossref/C-doc-before-fork.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Mathlib/Tactic/CrossRefAttribute.lean | 24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/Mathlib/Tactic/CrossRefAttribute.lean b/Mathlib/Tactic/CrossRefAttribute.lean
+index 9f71202f62..45b775166c 100644
+--- a/Mathlib/Tactic/CrossRefAttribute.lean
++++ b/Mathlib/Tactic/CrossRefAttribute.lean
+@@ -507,8 +507,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| kerodon $tag $[$comment]?) => pure (Database.kerodon, tag, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc db decl (← tag.getStacksTag) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### Wikidata attribute -/
+@@ -529,8 +529,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| wikidata $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .wikidata decl (← id.getWikidataId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### LMFDB attribute -/
+@@ -549,8 +549,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| lmfdb $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .lmfdb decl (← id.getLmfdbId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### π-Base attribute -/
+@@ -592,8 +592,8 @@ initialize Lean.registerBuiltinAttribute {
+         pure (id, topic, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc (.pibase topic) decl (← id.getPibaseId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### DLMF attribute -/
+@@ -612,8 +612,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| dlmf $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .dlmf decl (← id.getDlmfId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### OEIS attribute -/
+@@ -634,8 +634,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| oeis $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .oeis decl (← id.getOeisId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring
++  applicationTime := .afterCompilation
+ }
+ 
+ end Mathlib.CrossRef
+-- 
+2.48.1
+
+
+From 0c3b0ba796afc20079271fd5c15c8ca2338edf43 Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 22:52:37 -0400
+Subject: [PATCH 2/2] test(CrossRefAttribute): links stay on documented
+ declarations
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Mathlib/Tactic/CrossRefAttribute.lean |  7 +------
+ MathlibTest/CrossRefAttribute.lean    | 16 ++++++++++------
+ 2 files changed, 11 insertions(+), 12 deletions(-)
+
+diff --git a/Mathlib/Tactic/CrossRefAttribute.lean b/Mathlib/Tactic/CrossRefAttribute.lean
+index 45b775166c..aa9efd3218 100644
+--- a/Mathlib/Tactic/CrossRefAttribute.lean
++++ b/Mathlib/Tactic/CrossRefAttribute.lean
+@@ -143,12 +143,7 @@ def addTagEntry {m : Type → Type} [MonadEnv m]
+     { declName := declName, database := db, tag := tag, comment := comment })
+ 
+ /-- Append a cross-reference link to the docstring of `decl` and record it in `tagExt`.
+-This is the database-agnostic core of every cross-reference attribute's `add` handler.
+-
+-TODO: due to the docstring extension being `.async .asyncEnv`, this can only add new docstrings
+-and not replace them. We do not know a good alternative.
+-See Zulip: https://leanprover.zulipchat.com/#narrow/channel/287929-mathlib4/topic/Cross-reference.20attributes.20don.27t.20change.20the.20docstring/with/631664323
+--/
++This is the database-agnostic core of every cross-reference attribute's `add` handler. -/
+ def addCrossRefDoc (db : Database) (decl : Name) (idStr comment : String) : CoreM Unit := do
+   let oldDoc := (← findDocString? (← getEnv) decl).getD ""
+   let commentInDoc := if comment.isEmpty then "" else s!" ({comment})"
+diff --git a/MathlibTest/CrossRefAttribute.lean b/MathlibTest/CrossRefAttribute.lean
+index de6789a909..aae4bb1a0a 100644
+--- a/MathlibTest/CrossRefAttribute.lean
++++ b/MathlibTest/CrossRefAttribute.lean
+@@ -47,19 +47,23 @@ info: some ([Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) \(A com
+ run_cmd
+   Lean.logInfo m!"{← Lean.findDocString? (← Lean.getEnv) `X.versoTagged}"
+ 
+--- Known issue: due to async elaboration, the stacks / kerodon tags get overwritten by
+--- the declaration's own docstring.
+ /--
+-info: some (This docstring should appear before any Stacks or Kerodon references.)
++info: some (This docstring should appear before any Stacks or Kerodon references.
++
++[Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) (A comment)
++
++[Kerodon Tag B15R](https://kerodon.net/tag/B15R) (Also a comment))
+ -/
+ #guard_msgs in
+ run_cmd
+   Lean.logInfo m!"{← Lean.findDocString? (← Lean.getEnv) `X.taggedWithOwnDocstring}"
+ 
+--- Known issue: due to async elaboration, the stacks / kerodon tags get overwritten by
+--- the declaration's own docstring.
+ /--
+-info: some (This docstring should appear before any Stacks or Kerodon references. )
++info: some (This docstring should appear before any Stacks or Kerodon references. 
++
++[Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) \(A comment\)
++
++[Kerodon Tag B15R](https://kerodon.net/tag/B15R) \(Also a comment\))
+ -/
+ #guard_msgs in
+ run_cmd
+-- 
+2.48.1
+

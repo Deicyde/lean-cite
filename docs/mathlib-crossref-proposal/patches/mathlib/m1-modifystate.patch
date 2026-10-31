@@ -1,0 +1,142 @@
+From d584adda4d184f42fca6d87eac6efb95ea4a2952 Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 04:26:43 -0400
+Subject: [PATCH] fix(Tactic/CrossRefAttribute): append cross-reference links
+ through modifyState after compilation
+
+Local prototype M1. Links reach the .olean for every declaration. Breaks the same-file link on
+undocumented theorems.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Mathlib/Tactic/CrossRefAttribute.lean | 69 ++++++++++++++++-----------
+ 1 file changed, 42 insertions(+), 27 deletions(-)
+
+diff --git a/Mathlib/Tactic/CrossRefAttribute.lean b/Mathlib/Tactic/CrossRefAttribute.lean
+index 9f71202f62..262ecf56e5 100644
+--- a/Mathlib/Tactic/CrossRefAttribute.lean
++++ b/Mathlib/Tactic/CrossRefAttribute.lean
+@@ -145,24 +145,39 @@ def addTagEntry {m : Type → Type} [MonadEnv m]
+ /-- Append a cross-reference link to the docstring of `decl` and record it in `tagExt`.
+ This is the database-agnostic core of every cross-reference attribute's `add` handler.
+ 
+-TODO: due to the docstring extension being `.async .asyncEnv`, this can only add new docstrings
+-and not replace them. We do not know a good alternative.
+-See Zulip: https://leanprover.zulipchat.com/#narrow/channel/287929-mathlib4/topic/Cross-reference.20attributes.20don.27t.20change.20the.20docstring/with/631664323
+--/
++Lean adds a declaration's own docstring after compiling it, replacing any docstring added before,
++so the attributes run after compilation. A theorem elaborated in parallel gets its docstring on the
++parallel branch, after the attributes ran. `modifyState` applies its function both to the state
++visible here and to the final state exported to the `.olean` file, where it runs after the parallel
++branch and so appends the link to the theorem's docstring. The theorem's own file sees that
++docstring without the link.
++
++A Markdown docstring takes precedence over a Verso one, so a Verso docstring gets a Verso link.
++Whether a theorem elaborated in parallel will get a Verso docstring is not visible here, so
++`doc.verso` decides. -/
+ def addCrossRefDoc (db : Database) (decl : Name) (idStr comment : String) : CoreM Unit := do
+-  let oldDoc := (← findDocString? (← getEnv) decl).getD ""
++  let env ← getEnv
++  unless env.getModuleIdxFor? decl |>.isNone do
++    throwError m!"invalid doc string, declaration `{.ofConstName decl}` is in an imported module"
++  let label := s!"{db.label} {idStr}"
+   let commentInDoc := if comment.isEmpty then "" else s!" ({comment})"
+-  let link := s!"[{db.label} {idStr}]({db.url idStr}){commentInDoc}"
+-  let newDoc := "\n\n".intercalate ([oldDoc, link].filter (· != ""))
+-  if doc.verso.get (← getOptions) then Meta.MetaM.run' <| Term.TermElabM.run' <| do
+-    -- Verso docstrings expect to be elaborated in the context of an existing declaration.
+-    -- Since these attributes are elaborated async, the declaration won't be in the environment yet,
+-    -- and so in that case we instead elaborate in the context of the current function.
+-    let decl' := if (← getEnv).contains decl then decl else decl_name%
+-    let { toVersoDocString, deferredChecks } ← versoDocStringOfText decl' (mkNullNode #[]) newDoc
+-    addVersoDocStringCore decl toVersoDocString deferredChecks
++  -- whether `decl` has a Verso docstring or will get one
++  let verso := versoDocStringExt.contains (asyncMode := .local) env decl ||
++    !docStringExt.contains (asyncMode := .local) env decl && doc.verso.get (← getOptions)
++  if verso then
++    let commentInDoc := if comment.isEmpty then #[] else #[.text commentInDoc]
++    let link : Doc.Block ElabInline ElabBlock :=
++      .para <| #[.link #[.text label] (db.url idStr)] ++ commentInDoc
++    modifyEnv (versoDocStringExt.modifyState (asyncDecl := decl) · fun docs =>
++      docs.insert decl <| match docs.find? decl with
++        | some doc => { doc with text := doc.text.push link }
++        | none => { text := #[link], subsections := #[] })
+   else
+-    addDocStringCore decl newDoc
++    let link := s!"[{label}]({db.url idStr}){commentInDoc}"
++    modifyEnv (docStringExt.modifyState (asyncDecl := decl) · fun docs =>
++      docs.insert decl <| match docs.find? decl with
++        | some doc => doc ++ "\n\n" ++ link
++        | none => link)
+   addTagEntry decl db idStr comment
+ 
+ open Parser
+@@ -507,8 +522,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| kerodon $tag $[$comment]?) => pure (Database.kerodon, tag, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc db decl (← tag.getStacksTag) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring; see `addCrossRefDoc`
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### Wikidata attribute -/
+@@ -529,8 +544,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| wikidata $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .wikidata decl (← id.getWikidataId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring; see `addCrossRefDoc`
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### LMFDB attribute -/
+@@ -549,8 +564,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| lmfdb $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .lmfdb decl (← id.getLmfdbId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring; see `addCrossRefDoc`
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### π-Base attribute -/
+@@ -592,8 +607,8 @@ initialize Lean.registerBuiltinAttribute {
+         pure (id, topic, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc (.pibase topic) decl (← id.getPibaseId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring; see `addCrossRefDoc`
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### DLMF attribute -/
+@@ -612,8 +627,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| dlmf $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .dlmf decl (← id.getDlmfId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring; see `addCrossRefDoc`
++  applicationTime := .afterCompilation
+ }
+ 
+ /-! ### OEIS attribute -/
+@@ -634,8 +649,8 @@ initialize Lean.registerBuiltinAttribute {
+       | `(attr| oeis $id $[$comment]?) => pure (id, comment)
+       | _ => throwUnsupportedSyntax
+     addCrossRefDoc .oeis decl (← id.getOeisId) ((comment.map (·.getString)).getD "")
+-  -- docstrings are immutable once an asynchronous elaboration task has been started
+-  applicationTime := .beforeElaboration
++  -- after Lean adds the declaration's own docstring; see `addCrossRefDoc`
++  applicationTime := .afterCompilation
+ }
+ 
+ end Mathlib.CrossRef
+-- 
+2.48.1
+

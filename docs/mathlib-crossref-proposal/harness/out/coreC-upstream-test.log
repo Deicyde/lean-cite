@@ -1,0 +1,26 @@
+some (This docstring should appear before any Stacks or Kerodon references.
+
+[Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) (A comment)
+
+[Kerodon Tag B15R](https://kerodon.net/tag/B15R) (Also a comment))
+MathlibTest/CrossRefAttribute.lean:55:0: error: ❌️ Docstring on `#guard_msgs` does not match generated message:
+
+- info: some (This docstring should appear before any Stacks or Kerodon references.)
++ info: some (This docstring should appear before any Stacks or Kerodon references.
++
++ [Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) (A comment)
++
++ [Kerodon Tag B15R](https://kerodon.net/tag/B15R) (Also a comment))
+some (This docstring should appear before any Stacks or Kerodon references. 
+
+[Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) \(A comment\)
+
+[Kerodon Tag B15R](https://kerodon.net/tag/B15R) \(Also a comment\))
+MathlibTest/CrossRefAttribute.lean:64:0: error: ❌️ Docstring on `#guard_msgs` does not match generated message:
+
+- info: some (This docstring should appear before any Stacks or Kerodon references. )
++ info: some (This docstring should appear before any Stacks or Kerodon references. 
++
++ [Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) \(A comment\)
++
++ [Kerodon Tag B15R](https://kerodon.net/tag/B15R) \(Also a comment\))

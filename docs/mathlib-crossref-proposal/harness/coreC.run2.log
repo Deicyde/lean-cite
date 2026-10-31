@@ -1,0 +1,30 @@
+== build 22:17:56
+System-wide memory free percentage: 82%
+githash b35cb10cf2ced51a2fd1880cfdbf75c71ab7a35a
+== attribute file 22:18:16
+== upstream test file
+rc 1
+2
+== probe 22:18:19
+lean: /Users/jack/Desktop/LEAN/crossref-proposal/lean4/build/release/stage1/bin/lean
+Lean (version 4.36.0, arm64-apple-darwin23.4.0, commit b35cb10cf2ced51a2fd1880cfdbf75c71ab7a35a, Release)
+rc decls=0 import=0
+== sweep 22:18:27
+System-wide memory free percentage: 81%
+done: 442 ok, 0 failed, 0 skipped
+== count 22:24:08
+System-wide memory free percentage: 80%
+tag entries 885; distinct decls 868; link shown 885; link lost 0; decls losing a link 0
+all kinds [(inductive, 163), (def, 305), (theorem, 417)]
+lost kinds []
+  115397 /Users/jack/Desktop/LEAN/crossref-proposal/harness/docs-coreC.tsv
+entries 115400 115397
+only in base 10 [('Algebraic.cardinalMk_le_max', 'md'), ('AlgebraicGeometry.Flat.isIso_of_surjective_of_mono', 'md'), ('ArithmeticFunction.liouville', 'md'), ('Module.Finite.of_surjective', 'md'), ('Odd', 'md'), ('PrimeSpectrum.isOpenMap_comap_algebraMap_tensorProduct_of_field', 'md'), ('PrimeSpectr
+only in new 7 [('Algebraic.cardinalMk_le_max', 'verso'), ('AlgebraicGeometry.Flat.isIso_of_surjective_of_mono', 'verso'), ('Module.Finite.of_surjective', 'verso'), ('PrimeSpectrum.isOpenMap_comap_algebraMap_tensorProduct_of_field', 'verso'), ('PrimeSpectrum.isOpenMap_comap_of_hasGoingDown_of_finiteP
+changed 656
+changed by appending links only 656 other 0
+== Lean tests except Lake 22:25:45
+System-wide memory free percentage: 73%
+100% tests passed out of 4469
+== done 22:38:57
+System-wide memory free percentage: 76%

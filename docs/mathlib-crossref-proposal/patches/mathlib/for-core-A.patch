@@ -1,0 +1,69 @@
+From fe0659099b33308bb701886644127d3facbbcdb2 Mon Sep 17 00:00:00 2001
+From: Jack McCarthy <37917934+Deicyde@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 22:52:37 -0400
+Subject: [PATCH] test(CrossRefAttribute): links stay on documented
+ declarations
+
+Local prototype; needs Lean branch crossref/A-merge-at-source.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Mathlib/Tactic/CrossRefAttribute.lean |  7 +------
+ MathlibTest/CrossRefAttribute.lean    | 16 ++++++++++------
+ 2 files changed, 11 insertions(+), 12 deletions(-)
+
+diff --git a/Mathlib/Tactic/CrossRefAttribute.lean b/Mathlib/Tactic/CrossRefAttribute.lean
+index 9f71202f62..fbea2635e9 100644
+--- a/Mathlib/Tactic/CrossRefAttribute.lean
++++ b/Mathlib/Tactic/CrossRefAttribute.lean
+@@ -143,12 +143,7 @@ def addTagEntry {m : Type → Type} [MonadEnv m]
+     { declName := declName, database := db, tag := tag, comment := comment })
+ 
+ /-- Append a cross-reference link to the docstring of `decl` and record it in `tagExt`.
+-This is the database-agnostic core of every cross-reference attribute's `add` handler.
+-
+-TODO: due to the docstring extension being `.async .asyncEnv`, this can only add new docstrings
+-and not replace them. We do not know a good alternative.
+-See Zulip: https://leanprover.zulipchat.com/#narrow/channel/287929-mathlib4/topic/Cross-reference.20attributes.20don.27t.20change.20the.20docstring/with/631664323
+--/
++This is the database-agnostic core of every cross-reference attribute's `add` handler. -/
+ def addCrossRefDoc (db : Database) (decl : Name) (idStr comment : String) : CoreM Unit := do
+   let oldDoc := (← findDocString? (← getEnv) decl).getD ""
+   let commentInDoc := if comment.isEmpty then "" else s!" ({comment})"
+diff --git a/MathlibTest/CrossRefAttribute.lean b/MathlibTest/CrossRefAttribute.lean
+index de6789a909..aae4bb1a0a 100644
+--- a/MathlibTest/CrossRefAttribute.lean
++++ b/MathlibTest/CrossRefAttribute.lean
+@@ -47,19 +47,23 @@ info: some ([Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) \(A com
+ run_cmd
+   Lean.logInfo m!"{← Lean.findDocString? (← Lean.getEnv) `X.versoTagged}"
+ 
+--- Known issue: due to async elaboration, the stacks / kerodon tags get overwritten by
+--- the declaration's own docstring.
+ /--
+-info: some (This docstring should appear before any Stacks or Kerodon references.)
++info: some (This docstring should appear before any Stacks or Kerodon references.
++
++[Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) (A comment)
++
++[Kerodon Tag B15R](https://kerodon.net/tag/B15R) (Also a comment))
+ -/
+ #guard_msgs in
+ run_cmd
+   Lean.logInfo m!"{← Lean.findDocString? (← Lean.getEnv) `X.taggedWithOwnDocstring}"
+ 
+--- Known issue: due to async elaboration, the stacks / kerodon tags get overwritten by
+--- the declaration's own docstring.
+ /--
+-info: some (This docstring should appear before any Stacks or Kerodon references. )
++info: some (This docstring should appear before any Stacks or Kerodon references. 
++
++[Stacks Tag A04Q](https://stacks.math.columbia.edu/tag/A04Q) \(A comment\)
++
++[Kerodon Tag B15R](https://kerodon.net/tag/B15R) \(Also a comment\))
+ -/
+ #guard_msgs in
+ run_cmd
+-- 
+2.48.1
+

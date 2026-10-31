@@ -1,0 +1,494 @@
+slow/SlowVersoCode.lean:10:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:10:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:10:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:15:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:15:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:15:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:20:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:20:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:20:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:25:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:25:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:25:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:30:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:30:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:30:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:35:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:35:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:35:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:40:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:40:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:40:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:45:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:45:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:45:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:50:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:50:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:50:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:55:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:55:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:55:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:60:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:60:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:60:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:65:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:65:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:65:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:70:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:70:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:70:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:75:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:75:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:75:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:80:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:80:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:80:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:85:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:85:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:85:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:90:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:90:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:90:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:95:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:95:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:95:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:100:9: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`Nat.add`
+  • {̲n̲a̲m̲e̲}̲`Nat.add`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`Nat.add`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:100:23: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`True`
+  • {̲n̲a̲m̲e̲}̲`True`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`True`
+    to mark the code as literal text and disable suggestions
+slow/SlowVersoCode.lean:100:34: warning: Code element could be more specific.
+
+Hint: Insert a role to document it:
+  • {̲l̲e̲a̲n̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲d̲o̲E̲l̲e̲m̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲g̲r̲i̲n̲d̲_̲r̲e̲f̲}̲`x + y`
+  • {̲s̲y̲n̲t̲a̲x̲ ̲t̲e̲r̲m̲}̲`x + y`
+  • Use the `lit` role:
+    {̲l̲i̲t̲}̲`x + y`
+    to mark the code as literal text and disable suggestions

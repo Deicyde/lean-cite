@@ -1,0 +1,44 @@
+== build 15:49:53
+System-wide memory free percentage: 65%
+githash b35cb10cf2ced51a2fd1880cfdbf75c71ab7a35a
+== attribute file 15:50:14
+== upstream test file
+rc 1
+3
+== probe 15:50:18
+lean: /Users/jack/Desktop/LEAN/crossref-proposal/lean4/build/release/stage1/bin/lean
+Lean (version 4.36.0, arm64-apple-darwin23.4.0, commit b35cb10cf2ced51a2fd1880cfdbf75c71ab7a35a, Release)
+rc decls=0 import=0
+== sweep 15:50:27
+System-wide memory free percentage: 65%
+done: 442 ok, 0 failed, 0 skipped
+== count 16:02:22
+System-wide memory free percentage: 65%
+tag entries 885; distinct decls 868; link shown 885; link lost 0; decls losing a link 0
+all kinds [(inductive, 163), (def, 305), (theorem, 417)]
+lost kinds []
+  115212 /Users/jack/Desktop/LEAN/crossref-proposal/harness/docs-coreB.tsv
+entries 115400 115212
+only in base 191 [('AdicCompletion.pow_smul_top_eq_ker_eval', 'md'), ('AlgEquiv.aut', 'md'), ('Algebra.Etale.of_formallyUnramified_of_flat', 'md'), ('Algebra.FinitePresentation.of_restrict_scalars_finitePresentation', 'md'), ('Algebra.FormallyUnramified.map_maximalIdeal', 'md'), ('Algebra.FormallyUn
+only in new 3 [('Lean.addDocStringSuffix', 'md'), ('Lean.docStringSuffixExt', 'md'), ('Lean.getDocStringSuffixes', 'md')]
+changed 36
+changed by appending links only 8 other 28
+('AddAction', 'md') 'usually mean `[AddAction A X]`.\n\n[Wikidata Q288465](https://www.wikidata.org/wiki/Q288465)' => 'hat the additive monoid `G`\nacts on `P`.\n\nFor example, if `A` is an additive group and `X` is a type, if a mathematician says\nsay "let `A` act on the set `X`" they will usually 
+('AddAction.sum_card_fixedBy_eq_card_orbits_mul_card_addGroup', 'md') 'ltiplied by the\norder of `G`.\n\n[Wikidata Q1330377](https://www.wikidata.org/wiki/Q1330377)' => "**Burnside's lemma** : given a finite additive group `G` acting on a type `X`,\nthe sum the orders of the stabilisers coincides wi
+('AddCommGroup', 'md') 'e group with commutative `(+)`.\n\n[Wikidata Q181296](https://www.wikidata.org/wiki/Q181296)' => 'An additive commutative group is an additive group with commutative `(+)`.'
+('AddGroup', 'md') 'th the minimum proof obligations.\n\n[Wikidata Q83478](https://www.wikidata.org/wiki/Q83478)' => 'ith a default so that `a - b = a + -b` holds by definition.\n\nUse `AddGroup.ofLeftAxioms` or `AddGroup.ofRightAxioms` to define an\nadditive group structure on a type with the minim
+('AddIrreducible', 'md') ' a sum of\nadditive non-units.\n\n[Wikidata Q2989575](https://www.wikidata.org/wiki/Q2989575)' => '`AddIrreducible p` states that `p` is not an additive unit and cannot be written as a sum of\nadditive non-units.'
+('AddMonoidHom', 'md') ' to extend `AddMonoidHomClass`.\n\n[Wikidata Q868169](https://www.wikidata.org/wiki/Q868169)' => 'ead of parametrizing results over `(f : M →+ N)`,\nyou should parametrize over `(F : Type*) [AddMonoidHomClass F M N] (f : F)`.\n\nWhen you extend this structure, make sure to 
+('AddSubgroup', 'md') ' addition and additive inverse.\n\n[Wikidata Q466109](https://www.wikidata.org/wiki/Q466109)' => 'An additive subgroup of an additive group `G` is a subset containing 0, closed\nunder addition and additive inverse.'
+('AddSubgroup.Normal', 'md') ' + n - g ∈ H` for every `g : A`\n\n[Wikidata Q743179](https://www.wikidata.org/wiki/Q743179)' => 'An AddSubgroup `H` is normal if whenever `n ∈ H`, then `g + n - g ∈ H` for every `g : A`'
+('AddSubgroup.card_addSubgroup_dvd_card', 'md') ' of its ambient additive group.\n\n[Wikidata Q505798](https://www.wikidata.org/wiki/Q505798)' => "**Lagrange's Theorem**: The order of an additive\nsubgroup divides the order of its ambient additive group."
+('AddSubgroup.index', 'md') 's 0 if the index is infinite.\n\n[Wikidata Q1464168](https://www.wikidata.org/wiki/Q1464168)' => 'The index of an additive subgroup as a natural number.\nReturns 0 if the index is infinite.'
+('CategoryTheory.Epi', 'md') ' g = f ≫ h` implies `g = h`.\n\n[Stacks Tag 003B](https://stacks.math.columbia.edu/tag/003B)' => 'A morphism `f` is an epimorphism if it can be cancelled when precomposed:\n`f ≫ g = f ≫ h` implies `g = h`.'
+('CategoryTheory.Mono', 'md') ' f = h ≫ f` implies `g = h`.\n\n[Stacks Tag 003B](https://stacks.math.columbia.edu/tag/003B)' => 'A morphism `f` is a monomorphism if it can be cancelled when postcomposed:\n`g ≫ f = h ≫ f` implies `g = h`.'
+('CommGroup', 'md') 'a group with commutative `(*)`.\n\n[Wikidata Q181296](https://www.wikidata.org/wiki/Q181296)' => 'A commutative group is a group with commutative `(*)`.'
+('Even', 'md') 'sfies `Even a` if `a = r + r`,\nfor some `r : α`.\n\n[OEIS A005843](https://oeis.org/A005843)' => 'An element `a` of a type `α` with addition satisfies `Even a` if `a = r + r`,\nfor some `r : α`.'
+('FreeAddGroup', 'md') 'AddGroup α` is not commutative.\n\n[Wikidata Q431078](https://www.wikidata.org/wiki/Q431078)' => 'pty\nthen `FreeAddGroup α` is isomorphic to the trivial group, and if `α` has one term\nthen `FreeAddGroup α` is isomorphic to `ℤ`.\nIf `α` has two or more terms then `Fre
+== Lean tests except Lake 16:04:22
+System-wide memory free percentage: 55%
+== done 16:04:22
+System-wide memory free percentage: 55%
