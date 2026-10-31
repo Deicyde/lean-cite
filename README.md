@@ -2,7 +2,8 @@
 
 Write, in the Lean source, which passage of a book, paper or database each declaration and each
 proof step formalizes. Export those links as
-[Literature Links](https://github.com/mathlib-initiative/literature-links) annotations.
+[Literature Links](https://github.com/mathlib-initiative/literature-links) annotations. That
+repository is private for now, so its link 404s without access; [Terms](#terms) has the basics.
 
 ```lean
 @[cite ladr4e "3.21"]                       -- this theorem is item 3.21 of the book
@@ -19,8 +20,11 @@ and that each step marker marks code. Whether a link is mathematically right sta
 CI builds and tests it with Lean 4.30.0-rc2, its pinned toolchain, and 4.36.0-rc1. The package
 alone has also been built with 4.31.0, 4.32.0, 4.33.1 and 4.35.0.
 
-It was tested on *Linear Algebra Done Right*, whose companion keeps its book-to-Lean links outside
-the Lean. Each chapter's links were written into the Lean as tags. The companion's own exporter was
+The package, its tests and the reviews named in its history were done by AI agents.
+
+It was tested on *Linear Algebra Done Right*. Rado Kirov's Lean formalization of the book is
+rkirov/linear-algebra-done-right-lean; Deicyde/linear-algebra-done-right-companion, called the
+companion below, keeps links from the book to it outside the Lean. Each chapter's links were written into the Lean as tags. The companion's own exporter was
 then run with that chapter's links to the Lean taken only from what `#cite_export` read back, and
 the book's side, such as where each passage is on the page, from the companion as before. It
 reproduced the companion's annotations, apart from `provenance.method`, which records where each
@@ -32,10 +36,10 @@ also private; [`examples/ladr`](examples/ladr/README.md#try-it) says how to buil
 
 ## Terms
 
-- **Literature Links** is a JSON Lines format with one annotation per link. An annotation has a
-  subject (here, the passage), an object (here, the Lean) and a relation between them. Each side
-  is a list of *ends*: a region of a PDF, a web page, a Lean declaration, some lines of a Lean
-  file.
+- **Literature Links** is a small JSON format with one annotation per link: a `.json` file holds one
+  annotation, and a `.jsonl` file one per line. An annotation has a subject (here, the passage), an
+  object (here, the Lean) and a relation between them. Each side is a list of *ends*: a region of a
+  PDF, a web page, a Lean declaration, some lines of a Lean file.
 - The **relations** are `exactMatch`, `closeMatch`, `broadMatch`, `narrowMatch`, `relatedMatch`,
   `hasPart` and `noMatch`. They read from the passage to the Lean: `broadMatch` says the Lean is
   more general than the passage, `narrowMatch` that it is a special case, `hasPart` that it states
@@ -287,7 +291,7 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
 
   When the extension is imported but no term fits, the export warns and leaves Mathlib out.
   `CiteTest/Mathlib/` tests each layout on a copy of its API. Each was also read from a real
-  Mathlib: v4.30.0-rc2 (the LADR companion's), v4.31.0's attribute file built alone, v4.32.0,
+  Mathlib: v4.30.0-rc2 (Rado's), v4.31.0's attribute file built alone, v4.32.0,
   v4.33.1 and v4.35.0.
 - **Cost.** The comment-marker linter reads each command's lines and those up to the next command.
   A file of 1,500 documented theorems with a marker each (6,004 lines) elaborates in 0.67 s with it
