@@ -302,7 +302,7 @@ release has it: the newest is v4.35.0, and this project is on v4.30.0-rc2.
 
 Here it shows as `elaboration function for 'Matrix.«term_ᴴ»' has not been implemented`, under
 `open scoped Matrix in`; in upstream's report, as `failed to synthesize Decidable p` at a
-`by_cases`. Measured on 2026-10-30, at Lean v4.30.0-rc2 except where it says otherwise:
+`by_cases`. Measured on 2026-10-30 and 31, at Lean v4.30.0-rc2 except where it says otherwise:
 
 | What ran | Failed |
 |---|---|
@@ -313,23 +313,30 @@ Here it shows as `elaboration function for 'Matrix.«term_ᴴ»' has not been im
 | the same with comment markers, and probes added to the file | 4 of 700 |
 | `Section_9C` with comment markers and `-DElab.async=false` | 0 of 150 |
 | `Section_9C` untagged | 0 of 180 |
+| `Section_9C`, twelve runs at once in random order, untagged | 9 of 300 |
+| the same on `comment-markers`, with no tags in the file but importing `Cite` | 9 of 300 |
+| the same with chapter 9's tags in the file | 15 of 300 |
 | a full site build (`lake query :literateHtml`) of Rado's untagged `main` | 2 of 7 |
 | a full site build of `comment-markers` | 4 of 6 |
 
-5 of 210 against 0 of 180 does not settle whether tags make the failure more frequent. If the two
-files had one rate, all 5 failures would land on the tagged one about one time in 23, and the file
-with probes failed less often than the plain tagged one, so these rates are not stable. Nor does
-0 of 180 show that the untagged file is safe. The failure has also hit Rado's own Pages deploys, in builds with no lean-cite at
-all: `e16d6df` at lines 512 and 513 of `Section_9C`, and apparently `682a386` in `Section_7D`, as
+The three rows of twelve runs at once ran together, at one load, so they are the fair comparison.
+Importing the package shows no effect, at 9 of 300 on both. The tagged file's 15 against 9 does not
+separate it from the untagged file (two-sided Fisher, p = 0.30), so a small effect of the tags is
+not ruled out. The earlier rows ran apart and at most three at a time, so their 5 of 210 against
+0 of 180 does not compare as cleanly, and the file with probes failed less often than the plain
+tagged one. The rate appears to rise with load: the tagged file goes from 5 of 210 to 15 of 300, the
+untagged one from 0 of 180 to 9 of 300, and full site builds fail more often still.
+
+The failure has also hit Rado's own Pages deploys, in builds with no lean-cite at all: `e16d6df` at lines 512 and 513 of `Section_9C`, and apparently `682a386` in `Section_7D`, as
 `failed to synthesize` for `LT 𝕜` and `PartialOrder 𝕜` under `open scoped ComplexOrder in`. Lean
 Action CI passed on both commits. Those are 2 of the 34 Pages deploys since `open scoped Matrix in`
 entered `Section_9C` on 2026-08-01; a third failure, `66333e1`, also failed Lean Action CI, so it is
 something else.
 
 The site builds ran on this 18 GB, 12-core Mac with nothing else running, alternating the two
-branches and clearing the library's build products before each, so they fail far more often than one
-file run alone, and at rates that 4 of 6 against 2 of 7 does not separate. `Section_9C` has no tags on
-`comment-markers`, but imports `Cite` through `Sources`. Most failures were at lines 512 and 513 of
+branches and clearing the library's build products before each. 4 of 6 against 2 of 7 does not
+separate them. `Section_9C` has no tags on `comment-markers`, but imports `Cite` through `Sources`.
+Most failures were at lines 512 and 513 of
 `Section_9C`; `main` also failed once in `Section_6B`, with `Unknown identifier π` under a scoped
 notation, and `comment-markers` once in `Section_5A`, with `ComplexConjugate.termConj`. After each
 failure the next build, with nothing cleared, retried what had not finished. The failed module passed
@@ -470,7 +477,8 @@ TERMS_OUT=$B.tsv lake env lean $E/DumpTerms.lean
 and then `python3 $E/compare_terms.py main.tsv comment-markers.tsv wrappers.tsv`.
 
 The failure table: its `Section_9C` rows ran Lean as `sample_build.sh` does, in a built checkout, at
-most three at a time, and its site builds came from `site_builds.sh`. Upstream's reproducer is in
+most three at a time except where the row says otherwise (`JOBS=12`, with the three variants' runs
+shuffled together), and its site builds came from `site_builds.sh`. Upstream's reproducer is in
 [its issue](https://github.com/leanprover/lean4/issues/15817).
 
 ## Files
