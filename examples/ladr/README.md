@@ -127,8 +127,8 @@ with nothing on stderr. Lean's 44 counts marks, one per marker or wrapper. `cite
 counts the 31 proof steps they mark; the chapter has 34, and 3 have no Lean. Its `mathlib` is
 unrelated: the Stacks tags of the Mathlib modules these files import.
 
-If `lake build` fails with `elaboration function for … has not been implemented` or
-`failed to synthesize …`, run it again; see
+If `lake build` fails with `elaboration function for … has not been implemented`,
+`failed to synthesize …` or `Unknown identifier` for a scoped notation's symbol, run it again; see
 [Intermittent build failures](#intermittent-build-failures).
 
 ## How the test runs
@@ -313,6 +313,8 @@ Here it shows as `elaboration function for 'Matrix.«term_ᴴ»' has not been im
 | the same with comment markers, and probes added to the file | 4 of 700 |
 | `Section_9C` with comment markers and `-DElab.async=false` | 0 of 150 |
 | `Section_9C` untagged | 0 of 180 |
+| a full site build (`lake query :literateHtml`) of Rado's untagged `main` | 2 of 7 |
+| a full site build of `comment-markers` | 4 of 6 |
 
 5 of 210 against 0 of 180 does not settle whether tags make the failure more frequent. If the two
 files had one rate, all 5 failures would land on the tagged one about one time in 23, and the file
@@ -324,10 +326,14 @@ Action CI passed on both commits. Those are 2 of the 34 Pages deploys since `ope
 entered `Section_9C` on 2026-08-01; a third failure, `66333e1`, also failed Lean Action CI, so it is
 something else.
 
-Of the four literate builds run here, two failed in `Section_9C`, both on the `comment-markers`
-branch, where that file has no tags but still imports `Cite` through `Sources`. One kept its message,
-at the same two lines; the other's was overwritten. The next build on that branch passed, as did the
-one on `wrappers`. No untagged literate build has run here, so these four do not compare the two.
+The site builds ran on this 18 GB, 12-core Mac with nothing else running, alternating the two
+branches and clearing the library's build products before each, so they fail far more often than one
+file run alone, and at rates that 4 of 6 against 2 of 7 does not separate. `Section_9C` has no tags on
+`comment-markers`, but imports `Cite` through `Sources`. Most failures were at lines 512 and 513 of
+`Section_9C`; `main` also failed once in `Section_6B`, with `Unknown identifier π` under a scoped
+notation, and `comment-markers` once in `Section_5A`, with `ComplexConjugate.termConj`. After each
+failure the next build, with nothing cleared, retried what had not finished. The failed module passed
+all 7 times, and in 2 of those builds a later module failed instead.
 
 In a failing run, a probe found the list empty (0 extensions, against 145) even though Lean had
 elaborated the `section` and the `open`. The tags do not touch this list.
@@ -464,7 +470,7 @@ TERMS_OUT=$B.tsv lake env lean $E/DumpTerms.lean
 and then `python3 $E/compare_terms.py main.tsv comment-markers.tsv wrappers.tsv`.
 
 The failure table: its `Section_9C` rows ran Lean as `sample_build.sh` does, in a built checkout, at
-most three at a time. Upstream's reproducer is in
+most three at a time, and its site builds came from `site_builds.sh`. Upstream's reproducer is in
 [its issue](https://github.com/leanprover/lean4/issues/15817).
 
 ## Files
@@ -485,3 +491,4 @@ most three at a time. Upstream's reproducer is in
 | `DumpTerms.lean` | writes each constant of the files chapter 1's tags touch, with its whole type and value |
 | `compare_terms.py` | classifies how those constants differ between builds |
 | `sample_build.sh` | runs Lean on one module N times, as Lake runs it, and counts the failures |
+| `site_builds.sh` | alternates full site builds of two built clones, and records how each went |
