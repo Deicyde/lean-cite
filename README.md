@@ -345,6 +345,22 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   A file of 1,500 documented theorems with a marker each (6,004 lines) elaborates in 0.67 s with it
   and 0.57 s without.
 
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE).
+
+Some files come from other projects, also under Apache 2.0, and keep their notices:
+
+- `CiteTest/Mathlib/` holds excerpts of Mathlib's cross-reference attribute files, © 2024 Damiano Testa.
+- A few short Lean examples, in this README, in the docstrings of `Cite/Steps.lean` and
+  `Cite/StepSyntax.lean`, and in `examples/ladr/`, come from Rado Kirov's
+  [linear-algebra-done-right-lean](https://github.com/rkirov/linear-algebra-done-right-lean), whose
+  README declares Apache-2.0.
+
+`examples/ladr/out/` records facts about Sheldon Axler's *Linear Algebra Done Right*, 4th edition
+(© 2024 Sheldon Axler, CC BY-NC 4.0): item numbers, short item titles, pages and positions on the
+page. It quotes none of the book's text.
+
 ## Files
 
 | Path | What |
