@@ -134,7 +134,7 @@ def wrappersLinter : Command.Linter where
       let reported : Bool := match findSource (← getEnv) w[1].getId.eraseMacroScopes with
         | .error _ => true
         | .ok s => !(s.entries.isEmpty || (s.entry? (w[2].isStrLit?.getD "")).isSome)
-      if reported then continue
+      if reported = true then continue
       let some (a, b) ← (try some <$> Command.liftCoreM (wrappedLines body) catch _ => pure none) | continue
       unless tags.any (fun t => t.start == a && t.stop == b) do
         Lean.Linter.logLint linter.cite.wrappers w m!"Lean discards what an `example`, a \
