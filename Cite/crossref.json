@@ -1,0 +1,55 @@
+{
+  "dlmf": {
+    "title": "NIST Digital Library of Mathematical Functions",
+    "label": "DLMF",
+    "type": "html",
+    "uri": "https://dlmf.nist.gov/{id}",
+    "homepage": "https://dlmf.nist.gov",
+    "doc": "Formulas, equations and figures by permalink, such as `5.4.E1`; see https://dlmf.nist.gov/help/cite."
+  },
+  "kerodon": {
+    "title": "Kerodon",
+    "label": "Kerodon Tag",
+    "type": "html",
+    "uri": "https://kerodon.net/tag/{id}",
+    "homepage": "https://kerodon.net",
+    "doc": "An online resource for homotopy-coherent mathematics, by Jacob Lurie. Each result has a tag of four digits or uppercase letters, such as `0X12`."
+  },
+  "lmfdb": {
+    "title": "The L-functions and Modular Forms Database",
+    "label": "LMFDB",
+    "type": "html",
+    "uri": "https://www.lmfdb.org/knowledge/show/{id}",
+    "homepage": "https://www.lmfdb.org",
+    "doc": "Knowls, the LMFDB's short definitions and explanations, by identifier: lowercase words, digits and underscores separated by periods, such as `group.abelian`."
+  },
+  "pibase.topology": {
+    "title": "π-Base: Topology",
+    "label": "π-Base (Topology)",
+    "type": "html",
+    "registry": "pibase-topology",
+    "uri": {
+      "P": "https://topology.pi-base.org/properties/{id}",
+      "S": "https://topology.pi-base.org/spaces/{id}",
+      "T": "https://topology.pi-base.org/theorems/{id}"
+    },
+    "homepage": "https://topology.pi-base.org",
+    "doc": "A community database of topological spaces, their properties and the theorems relating them. Properties are numbered like `P000001`, spaces like `S000001` and theorems like `T000001`."
+  },
+  "stacks": {
+    "title": "The Stacks Project",
+    "label": "Stacks Tag",
+    "type": "html",
+    "uri": "https://stacks.math.columbia.edu/tag/{id}",
+    "homepage": "https://stacks.math.columbia.edu",
+    "doc": "An open source textbook and reference work on algebraic stacks and the algebraic geometry needed to define them. Each result has a tag of four digits or uppercase letters, such as `0BR2`."
+  },
+  "wikidata": {
+    "title": "Wikidata",
+    "label": "Wikidata",
+    "type": "html",
+    "uri": "https://www.wikidata.org/wiki/{id}",
+    "homepage": "https://www.wikidata.org",
+    "doc": "A free knowledge base. Each item has an identifier of the letter Q and digits, such as `Q42`."
+  }
+}

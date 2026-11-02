@@ -1,0 +1,21 @@
+{
+  "notes": {
+    "title": "Lecture notes",
+    "type": "pdf",
+    "uri": "https://example.org/notes.pdf",
+    "doc": "Notes for a course.",
+    "entries": {
+      "1.2": {"title": "Associativity", "page": "4"},
+      "1.3": "Commutativity",
+      "2.1": {"title": "A lemma with a page of its own", "uri": "https://example.org/notes/2.1"}
+    }
+  },
+  "atlas": {
+    "title": "An atlas",
+    "uri": {
+      "": "https://example.org/{id}",
+      "P": "https://example.org/p/{id}",
+      "PQ": "https://example.org/pq/{id}"
+    }
+  }
+}

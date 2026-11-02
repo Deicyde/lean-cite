@@ -52,7 +52,8 @@ cannot: in an `example`'s proof, which Lean discards with what a wrapper records
 only part of a syntax node, and on lines that cross another step's. Lean runs linters under `withoutModifyingEnv` or in a separate task, so a
 linter cannot record what it reads; `#cite_export` reads the markers from the source. The linter
 `linter.cite.steps` checks each command's markers while it compiles: that they parse, mark code,
-cite a declared source, and mark lines inside the command.
+cite a declared source and one of its entries when it lists them, and mark lines inside the
+command.
 -/
 
 public meta section
@@ -107,14 +108,6 @@ partial def words (s : List Char) (acc : Array String := #[]) : Array String :=
   | cs =>
     let w := cs.takeWhile (!isBlank ·)
     words (cs.drop w.length) (acc.push (String.ofList w))
-
-/-- Is `w` a source name: parts of ASCII letters, digits and `_`, separated by `.`, none starting
-with a digit? -/
-def isSourceName (w : String) : Bool :=
-  !w.isEmpty && (w.splitOn ".").all fun part =>
-    match part.toList with
-    | c :: cs => (c.isAlpha || c == '_') && cs.all (fun c => c.isAlphanum || c == '_')
-    | [] => false
 
 /-- Classify a line comment's text, after its `--`, on line `line` at column `column`. -/
 def classifyComment (line column : Nat) (text : String) : LineKind := Id.run do
@@ -330,9 +323,9 @@ def isCodeText (text : String) : Bool :=
   match (classifyLines #[text]).1[0]? with | some LineKind.code => true | _ => false
 
 /-- Checks the markers in a command and in the comment lines just above it: that they parse, cite
-a declared source, and mark lines inside the command. It reads those lines and the lines after
-the command up to the next line of code indented no more than the command, so each command costs
-about its own length. -/
+a declared source and one of its entries when it lists them, and mark lines inside the command. It
+reads those lines and the lines after the command up to the next line of code indented no more
+than the command, so each command costs about its own length. -/
 def stepsLinter : Linter where
   run := withSetOptionIn fun stx => do
     unless Linter.getLinterValue linter.cite.steps (← Linter.getLinterOptions) do return
@@ -363,8 +356,11 @@ def stepsLinter : Linter where
       if line ≤ last then Linter.logLint linter.cite.steps (lineRef fm line) m!"{msg}"
     for m in r.markers do
       if m.line > last then continue
-      if let .error msg := findSource env m.source then
-        Linter.logLint linter.cite.steps (lineRef fm m.line) msg
+      match findSource env m.source with
+      | .error msg => Linter.logLint linter.cite.steps (lineRef fm m.line) msg
+      | .ok s =>
+        unless s.entries.isEmpty || (s.entry? m.id).isSome do
+          Linter.logLint linter.cite.steps (lineRef fm m.line) (s.unknownEntry m.id)
     for mk in r.marks do
       if mk.marker.line > last then continue
       unless first ≤ mk.start && mk.stop ≤ last do

@@ -15,7 +15,9 @@ one per proof step:
 
 * the subject is the source's entry. A source whose `uri` is a template with `{id}` gives each
   entry its own address (the id percent-encoded) and an identifier, keyed by the source's
-  `registry` field or else its name; its ends are `html` unless the source gives a `type`. Any
+  `registry` field or else its name; its ends are `html` unless the source gives a `type`. A field
+  `uri.<prefix>` is the template for the entries that start with `<prefix>`, the longest such, and
+  an entry listed with its own `uri` has that address. Any
   other source is the whole document, with the entry as the end's title, unless `--layout` places
   the entry. A layout is a JSON object mapping a source's name to its entries, and an entry such as
   `"3.21"` or `"3.21 proof, step 2"` to `{"subject": [ends], "kind": …, "status": …}`: what the
@@ -106,11 +108,17 @@ def main() -> int:
             # a tag is checked against the book only here: unplaced, it would link the whole document
             unplaced[(src, entry)] += 1
         fields = sources[src].get("fields", {})
-        if "uri" not in fields:
+        base = entry.split(" proof, step ")[0]
+        # as in Lean's `Source.entryUri?`: the entry's own address, or else the template of the
+        # longest prefix of the entry that has one (`uri.<prefix>`), or else `uri`
+        own = sources[src].get("entries", {}).get(base, {}).get("uri")
+        prefixed = [(k[4:], v) for k, v in fields.items() if k.startswith("uri.") and base.startswith(k[4:])]
+        uri = own or (max(prefixed, key=lambda kv: len(kv[0]))[1] if prefixed else fields.get("uri"))
+        if uri is None:
             sys.exit(f"the source `{src}` has no `uri` field, which its ends need")
-        uri = fields["uri"]
+        if own:
+            return [{"type": fields.get("type", "generic"), "uri": own, "title": title}], {}
         if "{id}" in uri:
-            base = entry.split(" proof, step ")[0]
             key = fields.get("registry", src)
             end = {"type": fields.get("type", "html"), "uri": uri.replace("{id}", urllib.parse.quote(base, safe="")),
                    "title": title}

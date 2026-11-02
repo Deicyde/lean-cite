@@ -4,7 +4,8 @@
 The layout is read back from the committed links in out/generic/, whose subjects the layout
 placed, so converting out/dump.json again must reproduce them byte for byte. Then a mistyped
 item and a step past the end of its proof must each be named, and `--strict` must refuse to
-write anything.
+write anything. Last, a source whose addresses differ by prefix of the entry, as `cite_sources`
+reads one from JSON, must give each entry the address of its longest prefix, or its own.
 """
 import copy
 import json
@@ -56,7 +57,18 @@ with tempfile.TemporaryDirectory() as tmp:
     if r.returncode == 0 or any(w not in r.stderr for w in wanted) or (work / "out").exists():
         failures.append(f"--strict wrote links with unplaced entries: exit {r.returncode}, {r.stderr.strip()}")
 
+    db = copy.deepcopy(dump)
+    db["sources"].append({"name": "atlas", "title": "An atlas", "module": "Test", "fields": {
+        "uri.": "https://example.org/{id}", "uri.P": "https://example.org/p/{id}"},
+        "entries": {"Q1": {"uri": "https://example.org/q-one"}}})
+    db["citations"] = [{**db["citations"][0], "source": "atlas", "id": e} for e in ("P1", "S1", "Q1")]
+    r = run(db, work)
+    got = [json.loads(line)["subject"][0]["uri"] for line in
+           (work / "out" / "atlas.jsonl").read_text(encoding="utf-8").splitlines()] if r.returncode == 0 else []
+    if got != ["https://example.org/p/P1", "https://example.org/S1", "https://example.org/q-one"]:
+        failures.append(f"prefix templates gave {got}: {r.stderr.strip()}")
+
 for f in failures:
     print(f)
-print(f"{3 - len(failures)} of 3 checks pass")
+print(f"{4 - len(failures)} of 4 checks pass")
 sys.exit(1 if failures else 0)

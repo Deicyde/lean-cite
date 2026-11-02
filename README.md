@@ -44,8 +44,9 @@ also private; [`examples/ladr`](examples/ladr/README.md#try-it) says how to buil
   `hasPart` and `noMatch`. They read from the passage to the Lean: `broadMatch` says the Lean is
   more general than the passage, `narrowMatch` that it is a special case, `hasPart` that it states
   one part of the passage. A tag may leave the relation out; its annotation then has none.
-- A **source** is a book, paper or database, declared once with `cite_source`. An **entry** is an
-  item of it: `"3.21"`, `"Exercise 1B.8"`, a Stacks tag.
+- A **source** is a book, paper or database, declared once with `cite_source`, or with others in
+  a JSON file with `cite_sources`. An **entry** is an item of it: `"3.21"`, `"Exercise 1B.8"`, a
+  Stacks tag.
 - A **proof step** is a numbered part of a proof in the source. The package does not number steps:
   a tag uses the numbering of whatever splits the source's proofs into steps, such as the data of
   the *Linear Algebra Done Right* companion. Step k of entry e becomes the annotation
@@ -143,6 +144,27 @@ Fields are free-form; `cite_ll.py` reads these:
 A docstring on `cite_source` is kept as the field `doc`. Two modules that do not import each other
 may declare the same name; citing it is then an error that names both.
 
+#### Sources in JSON
+
+`cite_sources "sources.json"` declares every source a JSON file describes. The Lean then holds only
+names and entries, as a LaTeX file holds `\ref` labels, and the file holds what they stand for. The
+path is relative to the Lean file.
+
+```json
+{"ladr4e": {"title": "Linear Algebra Done Right, 4th edition", "type": "pdf",
+            "uri": "https://linear.axler.net/LADR4e.pdf",
+            "entries": {"3.21": {"title": "Fundamental theorem of linear maps"}}}}
+```
+
+- A source needs a `title`. Its other fields are those of the table above, as strings.
+- `uri` may also map prefixes of entries to templates, for a database whose addresses differ by
+  kind of entry: `{"P": "…/properties/{id}", "S": "…/spaces/{id}"}`. The longest prefix wins.
+- With `entries`, every citation, wrapper and comment marker of the source must name one of them.
+  An entry is an object of strings, or a string, its title. An entry may give its own `uri`.
+- Hovering over a source or an entry in a citation shows its fields.
+- Lake does not know that a module reads the file. After editing it, touch the Lean file that
+  reads it, so that the next build reads it again.
+
 ### Declarations
 
 | Write | For |
@@ -207,6 +229,26 @@ Use a comment for:
 - a step inside an autoParam (`(h : p := by …)`), whose tactic Lean runs where the argument is
   left out, not where it is written.
 
+### Cross-reference attributes
+
+`import Cite.CrossRef` gives the attributes of Mathlib's `Mathlib/Tactic/CrossRefAttribute.lean`,
+moved here: `@[stacks 0BR2]`, `@[kerodon 0X12]`, `@[wikidata Q42]`, `@[lmfdb group.abelian]`,
+`@[pibase topology P000001]` and `@[dlmf 5.4.E1]`, with `#stacks_tags` and the other listing
+commands. As in Mathlib, each records the entry and appends a link to the declaration's docstring.
+`CiteTest/CrossRef.lean` holds Mathlib's test of them.
+
+- What each database is (its title, the label of its links, the address of an entry, a
+  description) is in `Cite/crossref.json`, which the module reads with `cite_sources`. The Lean
+  keeps the enumerated type `Database`, whose `Database.source` names each database's key in the
+  file, and each database's parser and attribute. A new database needs all three, and its JSON.
+- Each database is a source, so `@[cite stacks "0BR2"]`, `cite stacks "0BR2" step 2 =>` and
+  `-- cite stacks "0BR2" step 2` work, and `#cite_export` exports the tags.
+- Hovering over an identifier in an attribute shows the entry's address and the database's
+  description.
+- `Cite` does not import `Cite.CrossRef`. A project must not import it together with Mathlib's
+  file, which declares the same attributes; it is the module Mathlib would import in that file's
+  place.
+
 ## What Lean checks
 
 `@[cite]`, `cite … in` and the wrappers are checked as they elaborate.
@@ -215,6 +257,7 @@ Use a comment for:
 |---|---|
 | unknown source, misspelled relation or option, a field or option given twice | an error where it is written |
 | a citation the module already made | an error |
+| an entry that its source's JSON file does not list | an error where it is written; for a comment marker, a warning of `linter.cite.steps` |
 | `cite src "id" in`, without `step` or `statement`, before a declaration that has a name | a warning: write `@[cite]`, which records the name |
 | a wrapper that recorded no step (in an `example`, `decreasing_by`, a branch that failed, …) | a warning of `linter.cite.wrappers` |
 
@@ -227,10 +270,11 @@ linters off.
 
 `#cite_export "out.json" Root₁ Root₂ …` writes:
 
-- every source and every citation in the environment;
+- every source, with the entries it lists, and every citation in the environment;
 - the steps marked in the modules named `Rootᵢ` or `Rootᵢ.…`, by wrappers and by comments;
-- the cross-references of Mathlib's attributes (`@[stacks]`, `@[kerodon]`, `@[wikidata]`, …),
-  when Mathlib is imported, on Mathlib's declarations and the project's.
+- the cross-references of the attributes `@[stacks]`, `@[kerodon]`, `@[wikidata]`, …, those of
+  `Cite.CrossRef` or of Mathlib, whichever is imported, on Mathlib's declarations and the
+  project's.
 
 After `lake build`, run it with `lake env lean` from a file that imports what it should see and
 does not start with `module`.
@@ -255,14 +299,16 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   sit on the page. It maps a source's name to its entries, and an entry such as `"3.21"` or
   `"3.21 proof, step 2"` to `{"subject": [ends], "kind": …, "status": …}`; `cite_ll.py --help` has
   the details. `examples/ladr/layout_from_annotations.py` writes one from existing annotations.
-- A layout is also the only check of a tag against the book. Each entry it lacks, such as a
-  mistyped item or a step past the end of its proof, is named on stderr and linked to the whole
-  document. With `--strict` it is an error, and nothing is written.
+- Lean checks a tag against the book only when the source lists its `entries`; otherwise a layout
+  is the only check. Each entry the layout lacks, such as a mistyped item or a step past the end
+  of its proof, is named on stderr and linked to the whole document. With `--strict` it is an
+  error, and nothing is written.
 
 ## Limits and design notes
 
 - **`cite` is a keyword** wherever the package is imported, as `stacks` is wherever Mathlib is. A
-  command cannot start with a non-reserved word, and `cite … in` must.
+  command cannot start with a non-reserved word, and `cite … in` must. In the other direction,
+  `cite` reads its source as a name even when it is a keyword, so `cite stacks "0BR2"` works.
 - **Wrapping a declaration** makes it an inner command, so linters that look only at top-level
   commands, such as `linter.missingDocs`, skip it. Mathlib's `linter.style.multiGoal` warns about
   a wrapper around a `·` block while another goal is open.
@@ -280,10 +326,12 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   or in a separate task. Comment markers are therefore read from the source by the export.
 - **Mathlib's cross-references** are read through Mathlib's own API, by evaluating a term, so the
   package does not depend on Mathlib. Mathlib's attribute has had four layouts, and each has a
-  term; the first that elaborates is used:
+  term, as does `Cite.CrossRef`, which `Export` does not import; the first that elaborates is
+  used:
 
   | Mathlib | Extension | Address and name |
   |---|---|---|
+  | none: `Cite.CrossRef` | `Cite.CrossRef.tagExt` | `db.url env tag`, `db.shortName` |
   | to 2026-05-12 | `Mathlib.StacksTag.tagExt` | Stacks or Kerodon |
   | 2026-05-13 to 07-03 | `Mathlib.CrossRef.tagExt` | `databaseURL db ++ tag`; the name is the label's first word |
   | 2026-07-04 to 08-31 | `Mathlib.CrossRef.tagExt` | `db.url ++ tag`, `db.shortName` |
@@ -306,7 +354,9 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
 | `Cite/StepSyntax.lean` | the tactic and term wrappers, and `linter.cite.wrappers` |
 | `Cite/Steps.lean` | the comment markers: their scanner and `linter.cite.steps` |
 | `Cite/Export.lean` | `#cite_export`, and the reader of Mathlib's cross-references |
-| `CiteTest/` | the tests: `lake build CiteTest`. `scan_cases.json` is the scanner's corpus; `Mathlib/` has a copy of each layout of Mathlib's cross-reference API; `SameTerm.lean` checks that a wrapper leaves the proof term unchanged |
+| `Cite/CrossRef.lean` | Mathlib's cross-reference attributes, moved here; `Cite` does not import it |
+| `Cite/crossref.json` | what each of those databases is: title, label, addresses, description |
+| `CiteTest/` | the tests: `lake build CiteTest`. `scan_cases.json` is the scanner's corpus; `Mathlib/` has a copy of each layout of Mathlib's cross-reference API; `SameTerm.lean` checks that a wrapper leaves the proof term unchanged; `CrossRef.lean` holds Mathlib's test of its attributes; `Sources.lean` and `Hover.lean` test sources in JSON and hovers |
 | `scripts/cite_ll.py` | the converter to Literature Links |
 | `examples/ladr/` | the test on *Linear Algebra Done Right*: the scripts that tag it and check the tags against its annotations, and their outputs. `test_cite_scan.py` and `test_cite_ll.py` need nothing outside this repository |
 | `.github/workflows/ci.yml` | CI: `lake build Cite CiteTest`, then both Python tests |

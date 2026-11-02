@@ -3,7 +3,7 @@ module
 public meta import Cite.Basic
 
 /-!
-# `cite_source`, `@[cite]`, `cite … in` and `#cite_tags`
+# `cite_source`, `cite_sources`, `@[cite]`, `cite … in` and `#cite_tags`
 
 ```lean
 /-- Sheldon Axler, *Linear Algebra Done Right*, 4th edition. -/
@@ -77,6 +77,48 @@ def elabCiteSource : CommandElab
                                       module := (← getEnv).mainModule })
   | _ => throwUnsupportedSyntax
 
+/-- Declare the sources a JSON file describes: `cite_sources "sources.json"`, the path being
+relative to this file's directory, as for `include_str`. The file is an object from the name of
+each source to its fields:
+
+```json
+{"ladr4e": {"title": "Linear Algebra Done Right, 4th edition", "type": "pdf",
+            "uri": "https://linear.axler.net/LADR4e.pdf",
+            "entries": {"3.21": {"title": "Fundamental theorem of linear maps"}}}}
+```
+
+A source needs a `title`. Its other fields are those of `cite_source`, all strings, with two
+exceptions. `uri` may be an object from prefixes of entries to templates, for a database whose
+addresses differ by kind of entry; each becomes the field `uri.<prefix>`. `entries` lists the
+entries that may be cited, each with its fields or just its title; citing another is an error,
+like a LaTeX `\ref` to an undefined label. A source without `entries` takes any entry.
+
+Hovering over a source or an entry in a citation shows its fields. Lean reads the file when it
+compiles this command. Lake does not know that the module depends on the file, so after editing
+the file, rebuild the module, for instance by touching it. -/
+syntax (name := citeSources) "cite_sources " str : command
+
+@[command_elab citeSources]
+def elabCiteSources : CommandElab
+  | `(command| cite_sources $path:str) => do
+    let some dir := (System.FilePath.mk (← getFileName)).parent
+      | throwErrorAt path "cannot find the directory of this file"
+    let text ← try IO.FS.readFile (dir / path.getString)
+      catch e => throwErrorAt path m!"cannot read {path.getString}: {e.toMessageData}"
+    let json ← match Json.parse text with
+      | .ok j => pure j
+      | .error e => throwErrorAt path m!"{path.getString} is not JSON: {e}"
+    let sources ← match sourcesOfJson json with
+      | .ok ss => pure ss
+      | .error e => throwErrorAt path m!"{path.getString}: {e}"
+    for s in sources do
+      if let some d := (sourceDecls (← getEnv) s.name)[0]? then
+        throwErrorAt path "the source `{s.name}` is already declared, in module `{d.module}`"
+    let mod := (← getEnv).mainModule
+    for s in sources do
+      modifyEnv (sourceExt.addEntry · { s with module := mod })
+  | _ => throwUnsupportedSyntax
+
 /-- An option of a citation: `(rel := hasPart)` gives the relation, one of the Literature Links
 relations; `(role := helper)` how the target takes part; `(part := "a")` the part of the entry.
 Before a command, `(step := 2)` and `(statement := 2)` mark a step instead; see `cite … in`. -/
@@ -96,11 +138,20 @@ def citeOptions (opts : Array (TSyntax ``citeOpt)) : CoreM (Array (String × Str
     out := out.push (k, val, o.raw)
   return out
 
-/-- The source named by `src`, or an error at it. -/
-def checkSource (src : Ident) : CoreM Name := do
-  let name := src.getId.eraseMacroScopes
-  if let .error msg := findSource (← getEnv) name then throwErrorAt src msg
-  return name
+/-- The source named by `src`, or an error at it. Hovering over `src` shows the source. -/
+def checkSource (src : Ident) : CoreM Source := do
+  match findSource (← getEnv) src.getId.eraseMacroScopes with
+  | .error msg => throwErrorAt src msg
+  | .ok s =>
+    addHover src s.hover
+    return s
+
+/-- An error at `id` unless it is one of the entries of `s`, when `s` lists them. Hovering over
+`id` shows the entry. -/
+def checkEntry (s : Source) (id : StrLit) : CoreM Unit := do
+  unless s.entries.isEmpty || (s.entry? id.getString).isSome do
+    throwErrorAt id (s.unknownEntry id.getString)
+  addHover id (s.entryHover id.getString)
 
 /-- Check a relation's name. -/
 def checkRel (rel : String) (ref : Syntax) : CoreM Unit :=
@@ -110,9 +161,10 @@ def checkRel (rel : String) (ref : Syntax) : CoreM Unit :=
 /-- The citation that the arguments of `cite` describe, for `target`. -/
 def mkCitation (src : Ident) (id : StrLit) (opts : Array (TSyntax ``citeOpt))
     (comment : Option StrLit) (target : Target) : CoreM Citation := do
-  let name ← checkSource src
+  let s ← checkSource src
   if id.getString.all Char.isWhitespace then throwErrorAt id "the entry of a citation cannot be empty"
-  let mut c : Citation := { source := name, id := id.getString, target,
+  checkEntry s id
+  let mut c : Citation := { source := s.name, id := id.getString, target,
                             comment := (comment.map (·.getString)).getD "",
                             module := (← getEnv).mainModule }
   for (k, val, o) in ← citeOptions opts do
@@ -130,19 +182,22 @@ def mkCitation (src : Ident) (id : StrLit) (opts : Array (TSyntax ``citeOpt))
 of the current module. -/
 def mkStepTag (src : Ident) (id : StrLit) (steps : Array Nat) (rel : String) (relRef : Syntax)
     (start stop : Nat) (form : String) : CoreM StepTag := do
-  let name ← checkSource src
+  let s ← checkSource src
   if id.getString.all Char.isWhitespace then throwErrorAt id "the entry of a step cannot be empty"
+  checkEntry s id
   if steps.any (· == 0) then throwErrorAt id "steps are numbered from 1"
   checkRel rel relRef
-  return { source := name, id := id.getString, steps, rel, module := (← getEnv).mainModule,
+  return { source := s.name, id := id.getString, steps, rel, module := (← getEnv).mainModule,
            start, stop, form }
 
 /-- `@[cite src "id"]` records that the declaration formalizes the entry `id` of the source `src`,
-declared with `cite_source`. Options follow the entry, then an optional comment:
+declared with `cite_source` or `cite_sources`. Options follow the entry, then an optional comment:
 `@[cite ladr4e "1.3" (rel := hasPart) (role := helper) "associativity"]`.
 
-An `example` keeps nothing; before one, write `cite src "id" in` instead. -/
-syntax (name := cite) &"cite" ppSpace ident ppSpace str (ppSpace citeOpt)* (ppSpace str)? : attr
+The source is read as a name even when it is a keyword, such as `stacks` where `Cite.CrossRef` is
+imported. An `example` keeps nothing; before one, write `cite src "id" in` instead. -/
+syntax (name := cite) &"cite" ppSpace Lean.Parser.rawIdent ppSpace str (ppSpace citeOpt)*
+  (ppSpace str)? : attr
 
 /-- Is `decl` the name Lean gives an `example` while elaborating it, or a name under it, as for a
 `where` helper of an example? -/
@@ -172,12 +227,12 @@ the proof of `id`; with `(statement := k)`, that its statement does, from its ke
 its signature. A step takes `(rel := …)` and no other option.
 
 A command cannot start with a non-reserved word. This form therefore makes `cite` a keyword in
-every file that imports it, as Mathlib's attributes do `stacks` and `kerodon`; write `«cite»` for
-an identifier.
+every file that imports it, as the cross-reference attributes do `stacks` and `kerodon`; write
+`«cite»` for an identifier.
 
 A proof is elaborated asynchronously, so its errors come after this command has recorded the
 citation; a citation is recorded even when its command fails, as with `@[cite]`. -/
-syntax (name := citeIn) "cite " ident ppSpace str (ppSpace citeOpt)* (ppSpace str)?
+syntax (name := citeIn) "cite " Lean.Parser.rawIdent ppSpace str (ppSpace citeOpt)* (ppSpace str)?
   " in" ppLine command : command
 
 /-- The command that `cite … in`, `open … in` and `set_option … in` wrap. -/
@@ -273,9 +328,9 @@ def Citation.describe (c : Citation) : MessageData :=
 
 /-- `#cite_tags` lists every citation, those of imported modules included; `#cite_tags src` those
 of the source `src`. -/
-elab (name := citeTags) "#cite_tags" src:(ppSpace ident)? : command => do
+elab (name := citeTags) "#cite_tags" src:(ppSpace Lean.Parser.rawIdent)? : command => do
   let env ← getEnv
-  let name? := src.map (·.getId.eraseMacroScopes)
+  let name? := src.map (·.raw.getId.eraseMacroScopes)
   if let (some s, some n) := (src, name?) then
     if let .error msg := findSource env n then throwErrorAt s msg
   let cs := citations env |>.filter fun c => name?.all (c.source == ·)

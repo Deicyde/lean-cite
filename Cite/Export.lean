@@ -9,18 +9,20 @@ public meta import Lean.Meta.Instances
 
 `#cite_export "out.json" Root₁ Root₂` writes, as JSON:
 
-* `sources`: every declared source;
+* `sources`: every declared source, with the entries it lists;
 * `citations`: every citation, with the module and line range of what it cites;
 * `steps`: the steps marked in the imported modules named `Rootᵢ` or `Rootᵢ.…`, by
   `-- cite … step` markers in their source files (`form` `comment`) or by wrappers (`tactic`,
   `term`, `command` or `statement`), with the lines each marks and the declaration that holds them;
-* `mathlib`: the cross-references of Mathlib's attributes (`@[stacks]`, `@[kerodon]`,
-  `@[wikidata]` and the rest), when Mathlib's attribute is imported, each with the module of the
-  declaration it tags, which may be the project's own.
+* `mathlib`: the cross-references of the attributes `@[stacks]`, `@[kerodon]`, `@[wikidata]` and
+  the rest, those of `Cite.CrossRef` or of Mathlib's own copy, whichever is imported, each with the
+  module of the declaration it tags, which may be the project's own.
 
-This package depends on Lean alone, so it reads Mathlib's `tagExt` through Mathlib's own API: it
-elaborates and evaluates a term that names it. There is a term for each layout Mathlib has had:
+`Export` does not import `Cite.CrossRef`, and this package does not depend on Mathlib, so it reads
+the extension `tagExt` through its own API: it elaborates and evaluates a term that names it. There
+is a term for `Cite.CrossRef` and one for each layout Mathlib has had:
 
+* `Cite.CrossRef.tagExt`, with `Database.url : Environment → Database → String → String`;
 * to 2026-05-12, `Mathlib.StacksTag.tagExt` (Stacks and Kerodon);
 * from 2026-05-13, `Mathlib.CrossRef.tagExt` with `databaseURL` and `databaseLabel`;
 * from 2026-07-04, with `Database.url : Database → String` and `Database.shortName`;
@@ -93,9 +95,11 @@ def citationJson (c : Citation) : CoreM Json := do
     [("target", target)]
 
 def sourceJson (s : Source) : Json :=
-  Json.mkObj [("name", toJson s.name.toString), ("title", toJson s.title),
-    ("module", toJson (modName s.module)),
-    ("fields", Json.mkObj (s.fields.toList.map fun (k, v) => (k, toJson v)))]
+  let strings (fs : Array (String × String)) := Json.mkObj (fs.toList.map fun (k, v) => (k, toJson v))
+  Json.mkObj <| [("name", toJson s.name.toString), ("title", toJson s.title),
+    ("module", toJson (modName s.module)), ("fields", strings s.fields)] ++
+    (if s.entries.isEmpty then []
+     else [("entries", Json.mkObj (s.entries.toList.map fun (e, fs) => (e, strings fs)))])
 
 /-- The declarations of module `mod` that have declaration ranges, with those ranges. Recursors,
 the other constructions Lean adds to an inductive type, and a structure's constructor share the
@@ -167,9 +171,14 @@ def stepsOf (mod : Name) (cs : Array Citation) (tags : Array StepTag) : CommandE
       (wrapped.map fun (_, _, kw) => ("keyword", toJson kw)).toList
   return out
 
-/-- Mathlib's cross-references as (declaration, database, address, identifier, comment), one term
-for each layout of Mathlib's attribute, newest first; the first that elaborates is used. -/
+/-- The cross-references as (declaration, database, address, identifier, comment): one term for
+`Cite.CrossRef`, then one for each layout of Mathlib's attribute, newest first. The first that
+elaborates is used. -/
 def mathlibReaders : List (Name × String) := [
+  (`Cite.CrossRef.tagExt, "fun (env : Lean.Environment) =>
+    let s := Lean.PersistentEnvExtension.getState Cite.CrossRef.tagExt env
+    (s.2.flatten.appendList s.1).map fun t =>
+      (t.declName, t.database.shortName, t.database.url env t.tag, t.tag, t.comment)"),
   (`Mathlib.CrossRef.tagExt, "fun (env : Lean.Environment) =>
     let s := Lean.PersistentEnvExtension.getState Mathlib.CrossRef.tagExt env
     (s.2.flatten.appendList s.1).map fun t =>

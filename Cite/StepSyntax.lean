@@ -85,8 +85,8 @@ def recordStep (src : Ident) (id : StrLit) (ks : Array NumLit) (rel : Option Ide
 
 /-- `cite src "id" step k₁ … [relation] =>` followed by a block of tactics runs the block, and
 records that its lines carry out steps `kᵢ` of the proof of the entry `id` of the source `src`. -/
-syntax (name := citeStepTac) "cite " ident ppSpace str ppSpace &"step" (ppSpace num)+
-  (ppSpace ident)? " =>" ppIndent(ppLine tacticSeq) : tactic
+syntax (name := citeStepTac) "cite " Lean.Parser.rawIdent ppSpace str ppSpace &"step"
+  (ppSpace num)+ (ppSpace ident)? " =>" ppIndent(ppLine tacticSeq) : tactic
 
 @[tactic citeStepTac] def evalCiteStep : Tactic
   | `(tactic| cite $src:ident $id:str step $ks* $[$rel:ident]? => $tacs) => do
@@ -96,8 +96,8 @@ syntax (name := citeStepTac) "cite " ident ppSpace str ppSpace &"step" (ppSpace 
 
 /-- `cite src "id" step k₁ … [relation] in e` elaborates the term `e`, and records that its lines
 carry out steps `kᵢ` of the proof of the entry `id` of the source `src`. -/
-syntax:lead (name := citeStepTerm) "cite " ident ppSpace str ppSpace &"step" (ppSpace num)+
-  (ppSpace ident)? " in" ppLine term : term
+syntax:lead (name := citeStepTerm) "cite " Lean.Parser.rawIdent ppSpace str ppSpace &"step"
+  (ppSpace num)+ (ppSpace ident)? " in" ppLine term : term
 
 @[term_elab citeStepTerm] def elabCiteStepTerm : TermElab
   | `(cite $src:ident $id:str step $ks* $[$rel:ident]? in $e), expectedType? => do
@@ -130,8 +130,11 @@ def wrappersLinter : Command.Linter where
     let mod ← getMainModule
     let tags := stepTags (← getEnv) |>.filter (·.module == mod)
     for (w, body) in ws do
-      -- a wrapper with a bad source was already reported
-      if let .error _ := findSource (← getEnv) w[1].getId.eraseMacroScopes then continue
+      -- a wrapper with a bad source or entry was already reported
+      let reported := match findSource (← getEnv) w[1].getId.eraseMacroScopes with
+        | .error _ => true
+        | .ok s => !(s.entries.isEmpty || (s.entry? (w[2].isStrLit?.getD "")).isSome)
+      if reported then continue
       let some (a, b) ← (try some <$> Command.liftCoreM (wrappedLines body) catch _ => pure none) | continue
       unless tags.any (fun t => t.start == a && t.stop == b) do
         Lean.Linter.logLint linter.cite.wrappers w m!"Lean discards what an `example`, a \
