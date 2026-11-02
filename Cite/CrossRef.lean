@@ -6,6 +6,7 @@ Authors: Damiano Testa
 module
 
 public meta import Cite.Attribute
+public meta import Lean.DocString
 
 /-!
 # Cross-reference attributes

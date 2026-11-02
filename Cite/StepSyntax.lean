@@ -131,7 +131,7 @@ def wrappersLinter : Command.Linter where
     let tags := stepTags (← getEnv) |>.filter (·.module == mod)
     for (w, body) in ws do
       -- a wrapper with a bad source or entry was already reported
-      let reported := match findSource (← getEnv) w[1].getId.eraseMacroScopes with
+      let reported : Bool := match findSource (← getEnv) w[1].getId.eraseMacroScopes with
         | .error _ => true
         | .ok s => !(s.entries.isEmpty || (s.entry? (w[2].isStrLit?.getD "")).isSome)
       if reported then continue
