@@ -145,8 +145,8 @@ def sourcesOfJson (j : Json) : Except String (Array Source) := do
       | "entries", _ => throw s!"the `entries` of {what} is not an object"
       | k, .str s => fields := fields.push (k, s)
       | k, _ => throw s!"the field `{k}` of {what} is not a string"
-    let some title := title | throw s!"{what} has no `title`"
-    return ({ name := name.toName, title, fields, entries } : Source)
+    let some t := title | throw s!"{what} has no `title`"
+    return ({ name := name.toName, title := t, fields, entries } : Source)
 
 /-- Hover text as this version of Lean keeps it in `DelabTermInfo`: a string up to Lean 4.30, an
 action from Lean 4.31. -/
