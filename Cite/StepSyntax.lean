@@ -131,10 +131,11 @@ def wrappersLinter : Command.Linter where
     let tags := stepTags (← getEnv) |>.filter (·.module == mod)
     for (w, body) in ws do
       -- a wrapper with a bad source or entry was already reported
-      let reported : Bool := match findSource (← getEnv) w[1].getId.eraseMacroScopes with
-        | .error _ => true
-        | .ok s => !(s.entries.isEmpty || (s.entry? (w[2].isStrLit?.getD "")).isSome)
-      if reported = true then continue
+      match findSource (← getEnv) w[1].getId.eraseMacroScopes with
+      | .error _ => continue
+      | .ok s =>
+        if let some _ := s.entries[0]? then
+          if let none := s.entry? (w[2].isStrLit?.getD "") then continue
       let some (a, b) ← (try some <$> Command.liftCoreM (wrappedLines body) catch _ => pure none) | continue
       unless tags.any (fun t => t.start == a && t.stop == b) do
         Lean.Linter.logLint linter.cite.wrappers w m!"Lean discards what an `example`, a \
