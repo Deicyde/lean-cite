@@ -3,8 +3,9 @@ import Cite.CrossRef
 
 /-!
 Mathlib's test of its cross-reference attributes, `MathlibTest/CrossRefAttribute.lean` at
-`675c456f9e` (Apache-2.0), with `#parse`, which is Mathlib's, replaced by `parse` below. Then the
-databases as sources, their addresses, and the export.
+`675c456f9e` (Apache-2.0), with `#parse`, which is Mathlib's, replaced by `parse` below, whose
+`runParser` follows that test's `captureException`. Then the databases as sources, their addresses, and
+the export.
 -/
 
 open Lean Parser in

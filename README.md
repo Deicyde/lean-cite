@@ -351,6 +351,8 @@ Apache License 2.0; see [LICENSE](LICENSE).
 
 Some files come from other projects, also under Apache 2.0, and keep their notices:
 
+- `Cite/CrossRef.lean` and `CiteTest/CrossRef.lean` are Mathlib's `Mathlib/Tactic/CrossRefAttribute.lean`,
+  © 2024 Damiano Testa, and its test, moved here at `675c456f9e` and changed.
 - `CiteTest/Mathlib/` holds excerpts of Mathlib's cross-reference attribute files, © 2024 Damiano Testa.
 - A few short Lean examples, in this README, in the docstrings of `Cite/Steps.lean` and
   `Cite/StepSyntax.lean`, and in `examples/ladr/`, come from Rado Kirov's

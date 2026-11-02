@@ -2,6 +2,8 @@
 Copyright (c) 2024 Damiano Testa. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Damiano Testa
+Changed by Jack McCarthy, 2026: moved out of Mathlib at 675c456f9e; each database's metadata is read
+from crossref.json, and an identifier shows its entry on hover.
 -/
 module
 
