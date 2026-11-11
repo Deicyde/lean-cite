@@ -1,4 +1,4 @@
-# WORK IN PROGRESS
+# LeanCite Work in Progress
 
 Write, in the Lean source, which passage of a book, paper or database each declaration and each
 proof step formalizes. Export those links as
