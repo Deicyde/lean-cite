@@ -37,3 +37,6 @@ jobs:
 
       - name: Check the converter to Literature Links
         run: python3 -B examples/ladr/test_cite_ll.py
+
+      - name: Check the converter of Mathlib's cross-reference export
+        run: python3 -B scripts/test_crossrefs_ll.py
