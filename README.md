@@ -262,7 +262,8 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
 For Mathlib's own cross-references, `scripts/crossrefs_ll.py crossrefs.json --out <file.jsonl>`
 converts the `crossrefs.json` that Mathlib's `scripts/export_crossrefs.lean` writes, and
 leanprover-community/crossref-exports publishes, into one annotation per reference. It needs an
-export whose references carry `url` and `label`.
+export whose references carry `url`, which Mathlib writes since #45902. On the export of Mathlib
+4dbecbe (2026-11-19) it writes 895 annotations, which Literature Links 1.0.2 accepts.
 
 ## Limits and design notes
 

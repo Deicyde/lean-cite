@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Check crossrefs_ll.py on a two-entry export, with nothing outside this repository.
 
-A declaration with two references must give two annotations, a comment must become the note, and
-an export whose references have no `url` must be refused with nothing written.
+A declaration with two references must give two annotations, a comment must become the note, a
+reference with no `label` must be titled by its database, and an export whose references have no
+`url` must be refused with nothing written.
 """
 import json
 import subprocess
@@ -14,8 +15,7 @@ script = Path(__file__).resolve().parent / "crossrefs_ll.py"
 commit = "29d0cdab4c" + "0" * 30
 export = {"generated": "2026-11-12T00:00:00Z", "commit": commit, "entries": [
     {"decl": "AddAction", "module": "Mathlib.Algebra.Group.Action.Defs", "line": 117,
-     "refs": [{"db": "wikidata", "id": "Q288465", "comment": "", "url": "https://www.wikidata.org/wiki/Q288465",
-               "label": "Wikidata"}]},
+     "refs": [{"db": "wikidata", "id": "Q288465", "comment": "", "url": "https://www.wikidata.org/wiki/Q288465"}]},
     {"decl": "Nat.Prime", "module": "Mathlib.Data.Nat.Prime.Defs", "line": 50,
      "refs": [{"db": "oeis", "id": "A000040", "comment": "the primes", "url": "https://oeis.org/A000040",
                "label": "OEIS"},
@@ -39,6 +39,8 @@ with tempfile.TemporaryDirectory() as tmp:
         if rows[1]["subject"][0] != {"type": "html", "uri": "https://oeis.org/A000040", "title": "OEIS A000040",
                                       "identifiers": {"oeis": "A000040"}}:
             failures.append(f"subject: {rows[1]['subject']}")
+        if rows[0]["subject"][0]["title"] != "Wikidata Q288465":
+            failures.append(f"a reference with no label: {rows[0]['subject'][0]['title']!r}")
         if rows[1]["object"][0] != {"type": "lean", "uri": "https://github.com/leanprover-community/mathlib4",
                                      "version": commit,
                                      "location": {"declaration": "Nat.Prime", "module": "Mathlib.Data.Nat.Prime.Defs"}}:
