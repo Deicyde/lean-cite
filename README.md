@@ -259,6 +259,14 @@ python3 scripts/cite_ll.py out.json --project <repository URL> --commit <sha> \
   mistyped item or a step past the end of its proof, is named on stderr and linked to the whole
   document. With `--strict` it is an error, and nothing is written.
 
+For Mathlib's own cross-references, `scripts/crossrefs_ll.py crossrefs.json --out <file.jsonl>`
+converts the `crossrefs.json` that Mathlib's `scripts/export_crossrefs.lean` writes, and
+leanprover-community/crossref-exports publishes, into one annotation per reference. A reference's
+comment, such as the `(1)` of `@[stacks 05GG "(1)"]`, goes into the subject's title as in Mathlib's
+docstring links, and the reference itself is kept unchanged in an extension on the subject. It needs
+an export whose references carry `url`, which Mathlib writes since #45902. On the export of Mathlib
+4dbecbe (2026-11-19) it writes 895 annotations, which Literature Links 1.0.2 accepts.
+
 ## Limits and design notes
 
 - **`cite` is a keyword** wherever the package is imported, as `stacks` is wherever Mathlib is. A
