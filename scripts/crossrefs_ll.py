@@ -7,9 +7,12 @@
 leanprover-community/crossref-exports publishes after each build of Mathlib's `master`. Each
 reference must carry its `url`, which Mathlib writes since #45902. Each reference becomes one
 annotation, from the database entry (an `html` end with its identifier) to the declaration in Mathlib
-at the export's commit. The title names the database as Mathlib's docstring links do: by the
-reference's `label` if it has one, else by `LABELS`. The reference's comment becomes the note.
-Standard library only.
+at the export's commit. The end's title is the text of Mathlib's docstring link: the database's
+`label` if the reference has one, else its entry in `LABELS`, then the identifier, then the comment
+in parentheses unless it is already parenthesized, as in `Stacks Tag 05GG (1)` for the comment `(1)`. The comment is free text that usually names a part of
+the entry, so it belongs to the subject rather than to a note about the link. The end also keeps the
+reference's `db`, `id` and `comment` unchanged under the extension `EXTENSION`, so the reference
+can be read back exactly. Standard library only.
 """
 from __future__ import annotations
 
@@ -22,6 +25,8 @@ MATHLIB = "https://github.com/leanprover-community/mathlib4"
 #: `Database.label` in Mathlib's CrossRefAttribute.lean, by `Database.shortName`.
 LABELS = {"dlmf": "DLMF", "kerodon": "Kerodon Tag", "lmfdb": "LMFDB", "oeis": "OEIS",
           "pibase-topology": "π-Base (Topology)", "stacks": "Stacks Tag", "wikidata": "Wikidata"}
+#: The extension key, on the subject end, for the reference as `crossrefs.json` has it.
+EXTENSION = "org.leanprover-community.mathlib4.crossref"
 
 
 def annotations(export: dict) -> list[dict]:
@@ -37,10 +42,16 @@ def annotations(export: dict) -> list[dict]:
                 sys.exit(f"{entry['decl']}: a reference without `url`; export it with a Mathlib whose "
                          "export_crossrefs.lean writes it (#45902)")
             label = ref.get("label") or LABELS.get(ref["db"], ref["db"])
+            comment = ref.get("comment", "")
+            # Mathlib's docstring link reads `[label id](url) (comment)`; a comment such as `(1)`,
+            # already in parentheses, is not wrapped again
+            shown = comment if comment.startswith("(") and comment.endswith(")") else f"({comment})"
+            title = f"{label} {ref['id']}" + (f" {shown}" if comment else "")
             out.append({
-                "id": f"{ref['db']}:{ref['id']}", **({"note": ref["comment"]} if ref.get("comment") else {}),
-                "subject": [{"type": "html", "uri": ref["url"], "title": f"{label} {ref['id']}",
-                             "identifiers": {ref["db"]: ref["id"]}}],
+                "id": f"{ref['db']}:{ref['id']}",
+                "subject": [{"type": "html", "uri": ref["url"], "title": title,
+                             "identifiers": {ref["db"]: ref["id"]},
+                             "extensions": {EXTENSION: {"db": ref["db"], "id": ref["id"], "comment": comment}}}],
                 "object": [{"type": "lean", "uri": MATHLIB, "version": commit, "location": location}]})
     return out
 
